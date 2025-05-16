@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Складская Камера</string>
+    
+    <!-- Main Menu -->
+    <string name="menu_start">Начать документирование</string>
+    <string name="menu_settings">Настройки</string>
+    <string name="menu_language">Язык</string>
+    <string name="language_english">Английский</string>
+    <string name="language_russian">Русский</string>
+    <string name="language_chinese">Китайский</string>
+    <string name="menu_gallery">Галерея</string>
+    <string name="menu_help">Инструкции</string>
+    
+    <!-- Reception Screen -->
+    <string name="select_reception">Выберите приёмку</string>
+    <string name="no_receptions_found">Приёмки не найдены. Создайте новую.</string>
+    <string name="create_new_reception">Создать новую приёмку</string>
+    <string name="create">Создать</string>
+    <string name="error_invalid_date">Пожалуйста, выберите действительную дату</string>
+    <string name="reception_created">Приёмка успешно создана</string>
+    <string name="reception_already_exists">Приёмка с таким кодом и датой уже существует</string>
+    <string name="reception_date_format">Создано: %1$s</string>
+    
+    <!-- Help Screen -->
+    <string name="help_title">Инструкции</string>
+    <string name="help_storage_title">Где сохраняются файлы?</string>
+    <string name="help_storage_description">Фотографии и отчеты сохраняются в следующем месте на вашем устройстве:\n\nВнутреннее хранилище: DCIM/Camera/warehouse/\n\nВы можете передать эти файлы на компьютер с помощью USB-кабеля.</string>
+    <string name="help_howto_title">Как пользоваться приложением</string>
+    <string name="help_howto_description">1. Создайте или выберите приёмку\n2. Введите код производителя и выберите дату\n3. Выберите категорию дефекта\n4. Введите информацию об артикуле\n5. Сделайте фотографии коробки и продукта\n6. Сохраните элемент\n7. Завершите документирование, когда закончите</string>
+    <string name="help_gallery_title">Галерея</string>
+    <string name="help_gallery_description">Галерея показывает все фотографии, организованные по приёмкам. Вы можете просматривать все фотографии и сведения из прошлых сеансов документирования.</string>
+    <string name="close">Закрыть</string>
+    
+    <!-- Manufacturer Info Screen -->
+    <string name="manufacturer_title">Информация о производителе</string>
+    <string name="manufacturer_code_hint">Код производителя (4 цифры)</string>
+    <string name="date_label">Дата</string>
+    <string name="date_hint">Выберите дату</string>
+    <string name="defect_category_label">Категория дефекта</string>
+    <string name="defect_category_1">1 - Мятая упаковка</string>
+    <string name="defect_category_2">2 - Потертости</string>
+    <string name="defect_category_3">3 - Бракованный</string>
+    <string name="next">Далее</string>
+    
+    <!-- Article Info Screen -->
+    <string name="article_title">Информация об артикуле</string>
+    <string name="article_code_label">Код артикула</string>
+    <string name="article_code_hint">Введите код артикула (например, 666888AA)</string>
+    <string name="quantity_label">Количество</string>
+    <string name="quantity_hint">Количество элементов (1-10)</string>
+    
+    <!-- Defect Details Screen -->
+    <string name="defect_details_title">Сведения о дефекте</string>
+    <string name="reason_label">Причина</string>
+    <string name="template_label">Шаблон</string>
+    <string name="description_label">Описание</string>
+    <string name="description_hint">Введите описание дефекта</string>
+    
+    <!-- Reason options -->
+    <string name="reason_damage">Повреждение</string>
+    <string name="reason_factory_dialect">Заводской диалект</string>
+    <string name="reason_invalid_attachment">Недопустимое вложение</string>
+    <string name="reason_others">Другое</string>
+    <string name="reason_returned_to_supplier">Возвращено поставщику</string>
+    <string name="reason_short_delivery">Недопоставка</string>
+    <string name="reason_undercarriage">Ходовая часть</string>
+    
+    <!-- Template options -->
+    <string name="template_broken">Сломано</string>
+    <string name="template_damage_during_transportation">Повреждение при транспортировке</string>
+    <string name="template_damage_during_unloading">Повреждение при разгрузке</string>
+    <string name="template_deformation">Деформация</string>
+    <string name="template_dent">Вмятина</string>
+    <string name="template_mechanical_damage">Механическое повреждение</string>
+    <string name="template_others">Другое</string>
+    <string name="template_packing_error">Ошибка упаковки</string>
+    <string name="template_returned_as_resorted">Возвращено как пересортица</string>
+    <string name="template_returned_due_to_marriage">Возвращено из-за брака</string>
+    <string name="template_scratch">Царапина</string>
+    <string name="template_scuffs">Потертости</string>
+    <string name="template_chip">Скол</string>
+    
+    <!-- Item List Screen -->
+    <string name="item_list_title">Элементы для документирования</string>
+    <string name="photo_box">Сделать фото коробки</string>
+    <string name="photo_product">Сделать фото продукта</string>
+    <string name="save">Сохранить</string>
+    <string name="complete">Завершить</string>
+    <string name="item_saved">Элемент успешно сохранен</string>
+    <string name="status_completed">Завершено</string>
+    <string name="status_pending">В ожидании</string>
+    <string name="box_photo_taken">Фото коробки: Сделано</string>
+    <string name="box_photo_not_taken">Фото коробки: Не сделано</string>
+    <string name="product_photo_taken">Фото продукта: Сделано</string>
+    <string name="product_photo_not_taken">Фото продукта: Не сделано</string>
+    
+    <!-- Camera Screen -->
+    <string name="camera_title">Сделать фото</string>
+    <string name="capture">Снять</string>
+    <string name="retake">Переснять</string>
+    <string name="use_photo">Использовать это фото</string>
+    
+    <!-- Gallery Screen -->
+    <string name="gallery_title">Фотогалерея</string>
+    <string name="gallery_article_info">Производитель: %1$s - Дата: %2$s - Артикул: %3$s</string>
+    <string name="no_photo_available">Нет доступных фото</string>
+    <string name="details">Детали</string>
+    <string name="no_details_available">Нет доступных деталей</string>
+    <string name="error_loading_details">Ошибка загрузки сведений</string>
+    <string name="view_in_gallery">Просмотр в галерее</string>
+    <string name="gallery_item_preview">Предварительный просмотр элемента</string>
+    <string name="gallery_loading">Загрузка галереи...</string>
+    <string name="gallery_image">Изображение</string>
+    <string name="gallery_document">Документ</string>
+    <string name="box_photo">Фото коробки</string>
+    <string name="product_photo">Фото продукта</string>
+    <string name="gallery_box_photo">Фото коробки</string>
+    <string name="gallery_product_photo">Фото продукта</string>
+    <string name="gallery_details">Детали</string>
+    
+    <!-- Image Viewer Screen -->
+    <string name="image_viewer_title">Просмотр изображения</string>
+    <string name="image_viewer_description">Полный просмотр изображения</string>
+    <string name="image_viewer_share">Поделиться</string>
+    
+    <!-- Error messages -->
+    <string name="error_invalid_manufacturer_code">Код производителя должен состоять из 4 цифр</string>
+    <string name="error_invalid_article">Введите действительный код артикула</string>
+    <string name="error_invalid_quantity">Количество должно быть от 1 до 10</string>
+    <string name="error_select_category">Выберите категорию дефекта</string>
+    <string name="error_camera_permission">Требуется разрешение на использование камеры</string>
+    <string name="error_storage_permission">Требуется разрешение на использование хранилища</string>
+    <string name="error_create_directory">Не удалось создать каталог</string>
+    <string name="error_save_image">Не удалось сохранить изображение</string>
+    <string name="error_save_text">Не удалось сохранить текстовый файл</string>
+    <string name="complete_all_items">Завершите документирование всех элементов</string>
+</resources>

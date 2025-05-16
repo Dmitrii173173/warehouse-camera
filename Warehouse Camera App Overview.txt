@@ -1,0 +1,86 @@
+# Warehouse Camera App
+
+## Project Overview
+The Warehouse Camera application is designed for documenting damaged goods in a warehouse environment. The app allows users to:
+- Input manufacturer information
+- Specify articles and quantities
+- Document defects with predefined categories and templates
+- Take photos of both boxes and products
+- Generate structured folder hierarchies and text files with defect details
+
+## Application Structure
+
+### Main Components:
+1. **MainActivity**: Entry point with language selection and navigation to start the documentation process
+2. **ManufacturerInfoActivity**: For entering manufacturer code, date, and defect category
+3. **ArticleInfoActivity**: For entering article code and quantity (1-10)
+4. **DefectDetailsActivity**: For selecting reason, template, and entering description
+5. **ItemListActivity**: For listing all items (based on quantity) and taking photos
+6. **CameraActivity**: For taking photos and previewing them
+
+### Data Model:
+- **ManufacturerInfo**: Stores manufacturer code, date, defect category
+- **ArticleInfo**: Stores article code and quantity
+- **DefectDetails**: Stores reason, template, and description
+- **ItemData**: Stores individual item data including box/product photo paths
+
+### Utilities:
+- **FileUtils**: Manages directory creation and file operations
+- **PermissionUtils**: Handles camera and storage permissions
+- **LanguageUtils**: Manages multiple language support (English, Russian, Chinese)
+
+## File Structure
+The app creates files in the following structure:
+```
+DCIM/Camera/warehouse/
+└── [Manufacturer Code]/
+    └── [Date]/
+        └── [Defect Category (1/2/3)]/
+            └── [Article-with-index]/
+                ├── box-[article-index].jpg
+                ├── product-[article-index].jpg
+                └── [article-index].txt
+```
+
+Example:
+```
+DCIM/Camera/warehouse/9002/05-12-2025/1/666888AA-1/
+├── box-666888AA-1.jpg
+├── product-666888AA-1.jpg
+└── 666888AA-1.txt
+```
+
+## Using the App
+
+### Workflow:
+1. Start the app and select language if needed
+2. Enter manufacturer information, date, and defect category
+3. Enter article code and quantity of items
+4. Select reason and template for the defect, add description
+5. Take photos for each item (box and product photos are optional)
+6. Save each item to generate the text file
+7. Complete the process when all items are documented
+
+### Example Text File Content:
+```
+Артикул: 666888AA-1
+Причина: Damage
+Шаблон: Dent
+Описание: Dents on the front and scratches
+```
+
+## Technical Details
+
+### Key Features:
+- Multi-language support (English, Russian, Chinese)
+- Camera integration with preview and retake options
+- Structured file system organization
+- Dynamic item list based on quantity
+- Comprehensive validation at each step
+
+### Permissions Required:
+- Camera permission: For taking photos
+- Storage permission: For saving photos and text files
+
+## Build and Installation
+The app is built using Gradle and can be installed on Android devices running API level 24 (Android 7.0) or higher.

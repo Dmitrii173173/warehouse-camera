@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Warehouse Camera</string>
+    
+    <!-- Main Menu -->
+    <string name="menu_start">Start documenting</string>
+    <string name="menu_settings">Settings</string>
+    <string name="menu_language">Language</string>
+    <string name="language_english">English</string>
+    <string name="language_russian">Russian</string>
+    <string name="language_chinese">Chinese</string>
+    <string name="menu_gallery">Gallery</string>
+    <string name="menu_help">Instructions</string>
+    
+    <!-- Reception Screen -->
+    <string name="select_reception">Select Reception</string>
+    <string name="no_receptions_found">No receptions found. Create a new one.</string>
+    <string name="create_new_reception">Create New Reception</string>
+    <string name="create">Create</string>
+    <string name="error_invalid_date">Please select a valid date</string>
+    <string name="reception_created">Reception created successfully</string>
+    <string name="reception_already_exists">Reception with this code and date already exists</string>
+    <string name="reception_date_format">Created: %1$s</string>
+    
+    <!-- Help Screen -->
+    <string name="help_title">Instructions</string>
+    <string name="help_storage_title">Where are files saved?</string>
+    <string name="help_storage_description">Photos and reports are saved in the following location on your device: Internal storage: DCIM/warehouse/ If permissions are not available, they will be saved to app\'s private storage. You can transfer these files to your computer using a USB cable.</string>
+    <string name="help_howto_title">How to use the app</string>
+    <string name="help_howto_description">1. Create or select a reception\n2. Enter manufacturer code and select date\n3. Choose defect category\n4. Enter article information\n5. Take photos of box and product\n6. Save the item\n7. Complete documentation when finished</string>
+    <string name="help_gallery_title">Gallery</string>
+    <string name="help_gallery_description">The gallery shows all photos organized by reception. You can view all photos and details from past document sessions.</string>
+    <string name="close">Close</string>
+    
+    <!-- Manufacturer Info Screen -->
+    <string name="manufacturer_title">Manufacturer Information</string>
+    <string name="manufacturer_code_hint">Manufacturer Code (4 digits)</string>
+    <string name="date_label">Date</string>
+    <string name="date_hint">Select date</string>
+    <string name="defect_category_label">Defect Category</string>
+    <string name="defect_category_1">1 - Crumpled packaging</string>
+    <string name="defect_category_2">2 - Abrasions</string>
+    <string name="defect_category_3">3 - Defective</string>
+    <string name="next">Next</string>
+    
+    <!-- Article Info Screen -->
+    <string name="article_title">Article Information</string>
+    <string name="article_code_label">Article code</string>
+    <string name="article_code_hint">Enter article code (e.g. 666888AA)</string>
+    <string name="quantity_label">Quantity</string>
+    <string name="quantity_hint">Number of items (1-10)</string>
+    
+    <!-- Defect Details Screen -->
+    <string name="defect_details_title">Defect Details</string>
+    <string name="reason_label">Reason</string>
+    <string name="template_label">Template</string>
+    <string name="description_label">Description</string>
+    <string name="description_hint">Enter defect description</string>
+    
+    <!-- Reason options -->
+    <string name="reason_damage">Damage</string>
+    <string name="reason_factory_dialect">Factory dialect</string>
+    <string name="reason_invalid_attachment">Invalid attachment</string>
+    <string name="reason_others">Others</string>
+    <string name="reason_returned_to_supplier">Returned to supplier</string>
+    <string name="reason_short_delivery">Short delivery</string>
+    <string name="reason_undercarriage">Undercarriage</string>
+    
+    <!-- Template options -->
+    <string name="template_broken">Broken</string>
+    <string name="template_damage_during_transportation">Damage during transportation</string>
+    <string name="template_damage_during_unloading">Damage during unloading</string>
+    <string name="template_deformation">Deformation</string>
+    <string name="template_dent">Dent</string>
+    <string name="template_mechanical_damage">Mechanical damage</string>
+    <string name="template_others">Others</string>
+    <string name="template_packing_error">Packing error</string>
+    <string name="template_returned_as_resorted">Returned as re-sorted</string>
+    <string name="template_returned_due_to_marriage">Returned due to marriage</string>
+    <string name="template_scratch">Scratch</string>
+    <string name="template_scuffs">Scuffs</string>
+    <string name="template_chip">Chip</string>
+    
+    <!-- Item List Screen -->
+    <string name="item_list_title">Items to Document</string>
+    <string name="photo_box">Take Box Photo</string>
+    <string name="photo_product">Take Product Photo</string>
+    <string name="save">Save</string>
+    <string name="complete">Complete</string>
+    <string name="item_saved">Item saved successfully</string>
+    <string name="status_completed">Completed</string>
+    <string name="status_pending">Pending</string>
+    <string name="box_photo_taken">Box photo: Taken</string>
+    <string name="box_photo_not_taken">Box photo: Not taken</string>
+    <string name="product_photo_taken">Product photo: Taken</string>
+    <string name="product_photo_not_taken">Product photo: Not taken</string>
+    
+    <!-- Camera Screen -->
+    <string name="camera_title">Take Photo</string>
+    <string name="capture">Capture</string>
+    <string name="retake">Retake</string>
+    <string name="use_photo">Use This Photo</string>
+    <string name="next_item">Next Item</string>
+    
+    <!-- Gallery Screen -->
+    <string name="gallery_title">Photo Gallery</string>
+    <string name="gallery_article_info">Manufacturer: %1$s - Date: %2$s - Article: %3$s</string>
+    <string name="no_photo_available">No photo available</string>
+    <string name="details">Details</string>
+    <string name="no_details_available">No details available</string>
+    <string name="error_loading_details">Error loading details</string>
+    <string name="view_in_gallery">View in Gallery</string>
+    <string name="gallery_item_preview">Item preview</string>
+    <string name="gallery_loading">Loading gallery...</string>
+    <string name="gallery_image">Image</string>
+    <string name="gallery_document">Document</string>
+    <string name="box_photo">Box Photo</string>
+    <string name="product_photo">Product Photo</string>
+    <string name="gallery_box_photo">Box Photo</string>
+    <string name="gallery_product_photo">Product Photo</string>
+    <string name="gallery_details">Details</string>
+    
+    <!-- Image Viewer Screen -->
+    <string name="image_viewer_title">Image Viewer</string>
+    <string name="image_viewer_description">Full image view</string>
+    <string name="image_viewer_share">Share</string>
+    
+    <!-- Error messages -->
+    <string name="error_invalid_manufacturer_code">Manufacturer code must be 4 digits</string>
+    <string name="error_invalid_article">Please enter a valid article code</string>
+    <string name="error_invalid_quantity">Quantity must be between 1 and 10</string>
+    <string name="error_select_category">Please select a defect category</string>
+    <string name="error_camera_permission">Camera permission is required</string>
+    <string name="error_storage_permission">Storage permission is required</string>
+    <string name="error_create_directory">Failed to create directory</string>
+    <string name="error_save_image">Failed to save image</string>
+    <string name="error_save_text">Failed to save text file</string>
+    <string name="no_more_items">No more items to process</string>
+    <string name="complete_all_items">Please complete documenting all items</string>
+</resources>
