@@ -2,6 +2,9 @@ package com.warehouse.camera.ui
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -9,6 +12,8 @@ import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.RadioButton
+import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -20,9 +25,11 @@ import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
 import com.warehouse.camera.utils.FileUtils
+import com.warehouse.camera.utils.ImageUtils
 import com.warehouse.camera.utils.LanguageUtils
 import com.warehouse.camera.utils.PermissionUtils
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -35,16 +42,25 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var usePhotoButton: Button
     private lateinit var nextItemButton: Button
     
+    // Radio buttons are still in the layout but hidden
+    private lateinit var radioGroupCircles: RadioGroup
+    private lateinit var radioButtonGreen: RadioButton
+    private lateinit var radioButtonYellow: RadioButton
+    private lateinit var radioButtonRed: RadioButton
+    
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
     
     private var outputFile: File? = null
     private var outputUri: Uri? = null
+    private var selectedCircleColor: Int = Color.GREEN
+    private var selectedCircleText: String = "1"
     
     private lateinit var manufacturerInfo: ManufacturerInfo
     private lateinit var articleInfo: ArticleInfo
     private lateinit var itemData: ItemData
     private var isBoxPhoto: Boolean = false
+    private var defectCategory: Int = 1 // Default category
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -74,7 +90,9 @@ class CameraActivity : AppCompatActivity() {
             @Suppress("DEPRECATION")
             intent.getParcelableExtra("itemData")
         } ?: throw IllegalStateException("ItemData must be provided")
+        
         isBoxPhoto = intent.getBooleanExtra("isBoxPhoto", false)
+        defectCategory = intent.getIntExtra("defectCategory", 1)
         
         // Initialize views
         viewFinder = findViewById(R.id.viewFinder)
@@ -84,6 +102,31 @@ class CameraActivity : AppCompatActivity() {
         retakeButton = findViewById(R.id.button_retake)
         usePhotoButton = findViewById(R.id.button_use_photo)
         nextItemButton = findViewById(R.id.button_next_item)
+        
+        // The radio buttons are now hidden but we still keep references to them
+        radioGroupCircles = findViewById(R.id.radioGroup_circles)
+        radioButtonGreen = findViewById(R.id.radioButton_green)
+        radioButtonYellow = findViewById(R.id.radioButton_yellow)
+        radioButtonRed = findViewById(R.id.radioButton_red)
+        
+        // Set initial values for circle color and text based on defect category
+        when (defectCategory) {
+            1 -> {
+                selectedCircleColor = Color.parseColor("#4CAF50")  // Green
+                selectedCircleText = "1"
+                radioButtonGreen.isChecked = true
+            }
+            2 -> {
+                selectedCircleColor = Color.parseColor("#FFC107")  // Yellow
+                selectedCircleText = "2"
+                radioButtonYellow.isChecked = true
+            }
+            3 -> {
+                selectedCircleColor = Color.parseColor("#F44336")  // Red
+                selectedCircleText = "3"
+                radioButtonRed.isChecked = true
+            }
+        }
         
         // Check permissions
         if (!PermissionUtils.hasCameraPermission(this) || !PermissionUtils.hasStoragePermission(this)) {
@@ -144,6 +187,9 @@ class CameraActivity : AppCompatActivity() {
         val imageCapture = imageCapture ?: return
         
         try {
+            // Update the defect category in the item data
+            itemData.defectCategory = defectCategory
+            
             // Create output file
             outputFile = FileUtils.createImageFile(
                 this,
@@ -163,6 +209,9 @@ class CameraActivity : AppCompatActivity() {
             // Create output options object
             val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile!!).build()
             
+            // Disable capture button during photo capture
+            captureButton.isEnabled = false
+            
             // Show a toast indicating photo is being taken
             Toast.makeText(this, "Taking photo...", Toast.LENGTH_SHORT).show()
             
@@ -172,30 +221,92 @@ class CameraActivity : AppCompatActivity() {
                 ContextCompat.getMainExecutor(this),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onError(exc: ImageCaptureException) {
+                        // Re-enable capture button
+                        captureButton.isEnabled = true
+                        
                         Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                        Toast.makeText(this@CameraActivity, "Error: ${exc.message}", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@CameraActivity, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
+                        
+                        // Clean up any partially written file
+                        outputFile?.delete()
+                        outputFile = null
+                        outputUri = null
                     }
                     
                     override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                         try {
-                            Log.d(TAG, "Photo saved successfully: ${outputFile?.absolutePath}")
-                            Log.d(TAG, "File exists: ${outputFile?.exists()}")
-                            Log.d(TAG, "File size: ${outputFile?.length()} bytes")
+                            // Re-enable capture button
+                            captureButton.isEnabled = true
                             
-                            outputUri = Uri.fromFile(outputFile)
+                            // Verify file exists and has non-zero size
+                            if (outputFile == null || !outputFile!!.exists() || outputFile!!.length() == 0L) {
+                                throw IOException("File was not created properly")
+                            }
+                            
+                            Log.d(TAG, "Photo captured successfully: ${outputFile?.absolutePath}")
+                            
+                            // Read the bitmap from file to verify it's valid
+                            val bitmap = BitmapFactory.decodeFile(outputFile!!.absolutePath)
+                            if (bitmap == null) {
+                                throw IOException("Failed to decode bitmap from file")
+                            }
+                            
+                            // Save the bitmap back to the file to ensure it's properly written
+                            FileUtils.saveBitmapToFile(bitmap, outputFile!!)
+                            
+                            // Create a marked version with the defect category indicator
+                            val markedBitmap = ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)
+                            
+                            // Create file path for marked version
+                            val originalPath = outputFile!!.absolutePath
+                            val markedPath = originalPath.replace(".jpg", "_marked.jpg")
+                            val markedFile = File(markedPath)
+                            
+                            // Save the marked version
+                            val markedSaved = FileUtils.saveBitmapToFile(markedBitmap, markedFile)
+                            
+                            if (!markedSaved) {
+                                Log.e(TAG, "Failed to save marked image")
+                                Toast.makeText(this@CameraActivity, R.string.error_save_image, Toast.LENGTH_LONG).show()
+                                return
+                            }
+                            
+                            // Store both paths in the ItemData
+                            if (isBoxPhoto) {
+                                itemData.boxPhotoPath = originalPath
+                                itemData.boxPhotoMarkedPath = markedPath
+                            } else {
+                                itemData.productPhotoPath = originalPath
+                                itemData.productPhotoMarkedPath = markedPath
+                            }
+                            
+                            Log.d(TAG, "Original photo saved at: $originalPath")
+                            Log.d(TAG, "Marked photo saved at: $markedPath")
+                            
+                            // Use the marked file for preview
+                            outputFile = markedFile
+                            outputUri = Uri.fromFile(markedFile)
                             showImagePreview()
                             
                             Toast.makeText(this@CameraActivity, "Photo saved", Toast.LENGTH_SHORT).show()
                         } catch (e: Exception) {
                             Log.e(TAG, "Error after saving image", e)
-                            Toast.makeText(this@CameraActivity, "Error after saving: ${e.message}", Toast.LENGTH_LONG).show()
+                            Toast.makeText(this@CameraActivity, R.string.error_save_image, Toast.LENGTH_LONG).show()
+                            
+                            // Clean up any partially written files
+                            outputFile?.delete()
+                            outputFile = null
+                            outputUri = null
                         }
                     }
                 }
             )
         } catch (e: Exception) {
+            // Re-enable capture button
+            captureButton.isEnabled = true
+            
             Log.e(TAG, "Error taking photo", e)
-            Toast.makeText(this, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
         }
     }
     
@@ -224,13 +335,8 @@ class CameraActivity : AppCompatActivity() {
             return
         }
         
-        if (isBoxPhoto) {
-            itemData.boxPhotoPath = outputFile?.absolutePath
-            Log.d(TAG, "Box photo path set to: ${itemData.boxPhotoPath}")
-        } else {
-            itemData.productPhotoPath = outputFile?.absolutePath
-            Log.d(TAG, "Product photo path set to: ${itemData.productPhotoPath}")
-        }
+        // Update category in the item data
+        itemData.defectCategory = defectCategory
         
         // Set result and finish
         val resultIntent = Intent()
@@ -246,12 +352,8 @@ class CameraActivity : AppCompatActivity() {
             return
         }
         
-        // Update current item data
-        if (isBoxPhoto) {
-            itemData.boxPhotoPath = outputFile?.absolutePath
-        } else {
-            itemData.productPhotoPath = outputFile?.absolutePath
-        }
+        // Update category in the item data
+        itemData.defectCategory = defectCategory
         
         // Get next item in same reception
         val resultIntent = Intent()

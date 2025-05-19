@@ -25,11 +25,103 @@
         android:layout_height="0dp"
         android:layout_marginTop="16dp"
         android:layout_marginBottom="16dp"
-        app:layout_constraintBottom_toTopOf="@+id/button_complete"
+        app:layout_constraintBottom_toTopOf="@+id/category_selection_container"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_item_list_title"
         tools:listitem="@layout/item_article" />
+
+    <LinearLayout
+        android:id="@+id/category_selection_container"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="16dp"
+        android:gravity="center"
+        android:orientation="horizontal"
+        app:layout_constraintBottom_toTopOf="@+id/button_complete"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <FrameLayout
+            android:id="@+id/category_1_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp">
+
+            <ImageView
+                android:id="@+id/category_1_selected_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/circle_blue"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/category_1_button"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/circle_green"
+                android:contentDescription="Category 1"
+                android:text="1"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/category_2_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="16dp">
+
+            <ImageView
+                android:id="@+id/category_2_selected_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/circle_blue"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/category_2_button"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/circle_yellow"
+                android:contentDescription="Category 2"
+                android:text="2"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+        </FrameLayout>
+
+        <FrameLayout
+            android:id="@+id/category_3_container"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:id="@+id/category_3_selected_indicator"
+                android:layout_width="12dp"
+                android:layout_height="12dp"
+                android:layout_gravity="top|center_horizontal"
+                android:layout_marginBottom="4dp"
+                android:background="@drawable/circle_blue"
+                android:visibility="invisible" />
+
+            <ImageButton
+                android:id="@+id/category_3_button"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:layout_marginTop="10dp"
+                android:background="@drawable/circle_red"
+                android:contentDescription="Category 3"
+                android:text="3"
+                android:textColor="@android:color/white"
+                android:textSize="18sp" />
+        </FrameLayout>
+    </LinearLayout>
 
     <Button
         android:id="@+id/button_complete"

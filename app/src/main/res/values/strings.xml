@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Warehouse Camera</string>
+    <string name="path">Path</string>
     
     <!-- Main Menu -->
     <string name="menu_start">Start documenting</string>
@@ -27,7 +28,7 @@
     <string name="help_storage_title">Where are files saved?</string>
     <string name="help_storage_description">Photos and reports are saved in the following location on your device: Internal storage: DCIM/warehouse/ If permissions are not available, they will be saved to app\'s private storage. You can transfer these files to your computer using a USB cable.</string>
     <string name="help_howto_title">How to use the app</string>
-    <string name="help_howto_description">1. Create or select a reception\n2. Enter manufacturer code and select date\n3. Choose defect category\n4. Enter article information\n5. Take photos of box and product\n6. Save the item\n7. Complete documentation when finished</string>
+    <string name="help_howto_description">1. Create or select a reception\n2. Enter manufacturer code and select date\n3. Choose defect category\n4. Enter article information\n5. Take damage and barcode photos\n6. Save the item\n7. Complete documentation when finished</string>
     <string name="help_gallery_title">Gallery</string>
     <string name="help_gallery_description">The gallery shows all photos organized by reception. You can view all photos and details from past document sessions.</string>
     <string name="close">Close</string>
@@ -38,6 +39,7 @@
     <string name="date_label">Date</string>
     <string name="date_hint">Select date</string>
     <string name="defect_category_label">Defect Category</string>
+    <string name="defect_category_0">0 - Normal</string>
     <string name="defect_category_1">1 - Crumpled packaging</string>
     <string name="defect_category_2">2 - Abrasions</string>
     <string name="defect_category_3">3 - Defective</string>
@@ -47,6 +49,13 @@
     <string name="article_title">Article Information</string>
     <string name="article_code_label">Article code</string>
     <string name="article_code_hint">Enter article code (e.g. 666888AA)</string>
+    <string name="scan_barcode">Scan Barcode/QR</string>
+    <string name="barcode_scanned_successfully">Barcode scanned successfully</string>
+    <string name="file_structure">File Structure</string>
+    <string name="folder_info">%1$d items | %2$s</string>
+    <string name="file_info">%1$s | %2$s</string>
+    <string name="scanner_frame">Scanner frame</string>
+    <string name="scan_barcode_instruction">Position the barcode/QR inside the frame</string>
     <string name="quantity_label">Quantity</string>
     <string name="quantity_hint">Number of items (1-10)</string>
     
@@ -83,24 +92,24 @@
     
     <!-- Item List Screen -->
     <string name="item_list_title">Items to Document</string>
-    <string name="photo_box">Take Box Photo</string>
-    <string name="photo_product">Take Product Photo</string>
+    <string name="photo_box">СДЕЛАТЬ ФОТО ПОВРЕЖДЕНИЯ</string>
+    <string name="photo_product">СДЕЛАТЬ ФОТО ШТРИХ КОДА</string>
     <string name="save">Save</string>
     <string name="complete">Complete</string>
     <string name="item_saved">Item saved successfully</string>
     <string name="status_completed">Completed</string>
     <string name="status_pending">Pending</string>
-    <string name="box_photo_taken">Box photo: Taken</string>
-    <string name="box_photo_not_taken">Box photo: Not taken</string>
-    <string name="product_photo_taken">Product photo: Taken</string>
-    <string name="product_photo_not_taken">Product photo: Not taken</string>
+    <string name="box_photo_taken">Фото повреждения: Сделано</string>
+    <string name="box_photo_not_taken">Фото повреждения: Не сделано</string>
+    <string name="product_photo_taken">Фото штрих кода: Сделано</string>
+    <string name="product_photo_not_taken">Фото штрих кода: Не сделано</string>
     
     <!-- Camera Screen -->
     <string name="camera_title">Take Photo</string>
     <string name="capture">Capture</string>
-    <string name="retake">Retake</string>
-    <string name="use_photo">Use This Photo</string>
-    <string name="next_item">Next Item</string>
+    <string name="retake">Переснять</string>
+    <string name="use_photo">Использовать это фото</string>
+    <string name="next_item">Следующий</string>
     
     <!-- Gallery Screen -->
     <string name="gallery_title">Photo Gallery</string>
@@ -114,10 +123,10 @@
     <string name="gallery_loading">Loading gallery...</string>
     <string name="gallery_image">Image</string>
     <string name="gallery_document">Document</string>
-    <string name="box_photo">Box Photo</string>
-    <string name="product_photo">Product Photo</string>
-    <string name="gallery_box_photo">Box Photo</string>
-    <string name="gallery_product_photo">Product Photo</string>
+    <string name="box_photo">Damage Photo</string>
+    <string name="product_photo">Barcode Photo</string>
+    <string name="gallery_box_photo">Damage Photo</string>
+    <string name="gallery_product_photo">Barcode Photo</string>
     <string name="gallery_details">Details</string>
     
     <!-- Image Viewer Screen -->
@@ -130,11 +139,26 @@
     <string name="error_invalid_article">Please enter a valid article code</string>
     <string name="error_invalid_quantity">Quantity must be between 1 and 10</string>
     <string name="error_select_category">Please select a defect category</string>
+    <string name="error_select_reason">Please select a reason</string>
+    <string name="error_select_template">Please select a template</string>
+    <string name="error_valid_description">Please enter a valid description</string>
     <string name="error_camera_permission">Camera permission is required</string>
     <string name="error_storage_permission">Storage permission is required</string>
     <string name="error_create_directory">Failed to create directory</string>
     <string name="error_save_image">Failed to save image</string>
     <string name="error_save_text">Failed to save text file</string>
+    <string name="error_photo_processing">Error processing photo</string>
+    <string name="error_permissions_required">Camera and storage permissions are required to use this app</string>
     <string name="no_more_items">No more items to process</string>
     <string name="complete_all_items">Please complete documenting all items</string>
+    <string name="empty_directory">This folder is empty</string>
+    <string name="file_explorer_title">File Explorer</string>
+    <string name="file_item_count">%1$d items</string>
+    <string name="delete">УДАЛИТЬ</string>
+    <string name="confirm_delete_folder">Вы уверены, что хотите удалить папку "%1$s" и все её содержимое?</string>
+    <string name="confirm_delete_file">Вы уверены, что хотите удалить файл "%1$s"?</string>
+    <string name="confirm">OK</string>
+    <string name="cancel">Отмена</string>
+    <string name="delete_success">Успешно удалено</string>
+    <string name="delete_error">Ошибка при удалении</string>
 </resources>

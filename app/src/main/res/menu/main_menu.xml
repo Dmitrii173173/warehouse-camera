@@ -10,6 +10,10 @@
         android:title="@string/menu_gallery"
         app:showAsAction="never" />
     <item
+        android:id="@+id/menu_file_structure"
+        android:title="@string/file_structure"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/menu_help"
         android:title="@string/menu_help"
         app:showAsAction="never" />

@@ -38,6 +38,8 @@
         <activity android:name=".ui.reception.ReceptionSelectionActivity" />
         <activity android:name=".ui.reception.CreateReceptionActivity" />
         <activity android:name=".ui.help.HelpActivity" />
+        <activity android:name=".ui.FileStructureActivity" />
+        <activity android:name=".ui.scanner.BarcodeScannerActivity" />
         
         <provider
             android:name="androidx.core.content.FileProvider"

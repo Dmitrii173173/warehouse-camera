@@ -125,9 +125,20 @@ class DefectDetailsActivity : AppCompatActivity() {
     private fun validateInputs(): Boolean {
         val description = descriptionEditText.text.toString()
         
+        // Проверка выбранных элементов в spinner
+        if (reasonSpinner.selectedItemPosition == 0 && reasonSpinner.selectedItem.toString().isEmpty()) {
+            Toast.makeText(this, R.string.error_select_reason, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        
+        if (templateSpinner.selectedItemPosition == 0 && templateSpinner.selectedItem.toString().isEmpty()) {
+            Toast.makeText(this, R.string.error_select_template, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        
         // Description is not required but can't be just whitespace if entered
         if (description.isNotBlank() && description.trim().isEmpty()) {
-            Toast.makeText(this, "Please enter valid description", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, R.string.error_valid_description, Toast.LENGTH_SHORT).show()
             return false
         }
         

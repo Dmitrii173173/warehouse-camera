@@ -7,6 +7,7 @@ import android.view.MenuItem
 import android.widget.Button
 import androidx.appcompat.app.AlertDialog
 import com.warehouse.camera.ui.base.BaseActivity
+import com.warehouse.camera.ui.FileStructureActivity
 import com.warehouse.camera.ui.help.HelpActivity
 import com.warehouse.camera.ui.reception.ReceptionSelectionActivity
 import com.warehouse.camera.ui.gallery.GalleryBrowserActivity
@@ -85,6 +86,10 @@ class MainActivity : BaseActivity() {
                 startActivity(Intent(this, GalleryBrowserActivity::class.java))
                 true
             }
+            R.id.menu_file_structure -> {
+                startActivity(Intent(this, FileStructureActivity::class.java))
+                true
+            }
             R.id.menu_help -> {
                 startActivity(Intent(this, HelpActivity::class.java))
                 true
@@ -121,6 +126,24 @@ class MainActivity : BaseActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        // Handle permission results if needed
+        
+        if (requestCode == PermissionUtils.REQUEST_CAMERA_PERMISSION) {
+            // Проверка, что все необходимые разрешения получены
+            val allPermissionsGranted = PermissionUtils.hasCameraPermission(this) && 
+                    PermissionUtils.hasStoragePermission(this)
+            
+            if (!allPermissionsGranted) {
+                // Если разрешения не получены, показываем предупреждение
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle(R.string.app_name)
+                    .setMessage(R.string.error_permissions_required)
+                    .setPositiveButton(android.R.string.ok) { dialog, _ -> 
+                        dialog.dismiss()
+                        // Даем пользователю возможность повторно запросить разрешения
+                        PermissionUtils.requestAllPermissions(this)
+                    }
+                    .show()
+            }
+        }
     }
 }

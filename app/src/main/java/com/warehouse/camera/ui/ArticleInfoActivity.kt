@@ -1,16 +1,20 @@
 package com.warehouse.camera.ui
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.textfield.TextInputEditText
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.ui.scanner.BarcodeScannerActivity
 import com.warehouse.camera.utils.LanguageUtils
 
 class ArticleInfoActivity : AppCompatActivity() {
@@ -19,6 +23,9 @@ class ArticleInfoActivity : AppCompatActivity() {
     private lateinit var quantityEditText: TextInputEditText
     private lateinit var defectCategoryRadioGroup: RadioGroup
     private lateinit var nextButton: Button
+    private lateinit var scanBarcodeButton: Button
+    
+    private lateinit var barcodeScannerLauncher: ActivityResultLauncher<Intent>
     
     private lateinit var manufacturerInfo: ManufacturerInfo
     
@@ -42,6 +49,26 @@ class ArticleInfoActivity : AppCompatActivity() {
         quantityEditText = findViewById(R.id.editText_quantity)
         defectCategoryRadioGroup = findViewById(R.id.radioGroup_defect_category)
         nextButton = findViewById(R.id.button_next)
+        scanBarcodeButton = findViewById(R.id.button_scan_barcode)
+        
+        // Регистрируем обработчик результата сканирования
+        barcodeScannerLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                val scannedBarcode = result.data?.getStringExtra("scanned_barcode")
+                if (scannedBarcode != null) {
+                    articleCodeEditText.setText(scannedBarcode)
+                    Toast.makeText(this, R.string.barcode_scanned_successfully, Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
+        
+        // Scan barcode button click
+        scanBarcodeButton.setOnClickListener {
+            val intent = Intent(this, BarcodeScannerActivity::class.java)
+            barcodeScannerLauncher.launch(intent)
+        }
         
         // Next button click
         nextButton.setOnClickListener {
@@ -101,9 +128,9 @@ class ArticleInfoActivity : AppCompatActivity() {
         val radioButton = findViewById<RadioButton>(selectedId)
         
         return when (radioButton.id) {
-            R.id.radioButton_category_1 -> 1
-            R.id.radioButton_category_2 -> 2
-            R.id.radioButton_category_3 -> 3
+            R.id.radioButton_category_1 -> 1 // Незначительные дефекты
+            R.id.radioButton_category_2 -> 2 // Потертости
+            R.id.radioButton_category_3 -> 3 // Бракованный
             else -> 1 // Default to 1 if none is selected (should not happen due to validation)
         }
     }

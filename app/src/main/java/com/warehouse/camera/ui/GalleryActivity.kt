@@ -5,15 +5,18 @@ import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.utils.FileUtils
 import com.warehouse.camera.utils.LanguageUtils
 import java.io.BufferedReader
 import java.io.File
@@ -27,6 +30,7 @@ class GalleryActivity : AppCompatActivity() {
     private lateinit var productPhotoImageView: ImageView
     private lateinit var noProductPhotoTextView: TextView
     private lateinit var itemDetailsTextView: TextView
+    private lateinit var deleteButton: Button
     
     private lateinit var manufacturerInfo: ManufacturerInfo
     private lateinit var articleInfo: ArticleInfo
@@ -76,6 +80,7 @@ class GalleryActivity : AppCompatActivity() {
         productPhotoImageView = findViewById(R.id.imageView_product_photo)
         noProductPhotoTextView = findViewById(R.id.textView_no_product_photo)
         itemDetailsTextView = findViewById(R.id.textView_item_details)
+        deleteButton = findViewById(R.id.button_delete_item)
         
         // Set article info
         articleInfoTextView.text = getString(
@@ -109,6 +114,11 @@ class GalleryActivity : AppCompatActivity() {
         
         // Load text file details
         loadTextDetails()
+        
+        // Set click listener for delete button
+        deleteButton.setOnClickListener {
+            showDeleteConfirmationDialog()
+        }
     }
     
     private fun openImageViewer(imagePath: String) {
@@ -186,6 +196,61 @@ class GalleryActivity : AppCompatActivity() {
         } catch (e: Exception) {
             itemDetailsTextView.text = getString(R.string.error_loading_details)
             Log.e(TAG, "Error loading text details: ${e.message}", e)
+        }
+    }
+    
+    /**
+     * Показать диалог подтверждения удаления всей папки с данным элементом
+     */
+    private fun showDeleteConfirmationDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.delete)
+            .setMessage(getString(R.string.confirm_delete_folder, itemData.fullArticleCode))
+            .setPositiveButton(R.string.confirm) { dialog, _ ->
+                dialog.dismiss()
+                deleteItemFolder()
+            }
+            .setNegativeButton(R.string.cancel) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .show()
+    }
+    
+    /**
+     * Удалить папку с элементом и всеми его файлами
+     */
+    private fun deleteItemFolder() {
+        try {
+            // Определяем путь к папке элемента на основе пути к фото
+            val photoPath = itemData.boxPhotoPath ?: itemData.productPhotoPath
+            
+            if (photoPath == null) {
+                Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show()
+                return
+            }
+            
+            // Получаем папку элемента (родительскую директорию фото)
+            val photoFile = File(photoPath)
+            val itemFolder = photoFile.parentFile
+            
+            if (itemFolder != null && itemFolder.exists()) {
+                // Используем метод FileUtils для рекурсивного удаления папки
+                val success = FileUtils.deleteFileOrDirectory(itemFolder)
+                
+                if (success) {
+                    Toast.makeText(this, R.string.delete_success, Toast.LENGTH_SHORT).show()
+                    // Закрываем активность после успешного удаления
+                    finish()
+                } else {
+                    Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show()
+                Log.e(TAG, "Item folder does not exist: ${itemFolder?.absolutePath}")
+            }
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show()
+            Log.e(TAG, "Error deleting item folder", e)
         }
     }
     

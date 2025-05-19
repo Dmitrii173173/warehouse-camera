@@ -9,7 +9,10 @@ data class ItemData(
     val index: Int,
     var boxPhotoPath: String? = null,
     var productPhotoPath: String? = null,
-    var isCompleted: Boolean = false
+    var boxPhotoMarkedPath: String? = null,
+    var productPhotoMarkedPath: String? = null,
+    var isCompleted: Boolean = false,
+    var defectCategory: Int = 1 // Default to category 1 (green)
 ) : Parcelable {
     val fullArticleCode: String
         get() = "$articleCode-$index"
