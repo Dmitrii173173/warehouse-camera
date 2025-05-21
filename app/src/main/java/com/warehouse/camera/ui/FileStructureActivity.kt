@@ -5,6 +5,7 @@ import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.warehouse.camera.R
+import com.warehouse.camera.model.project.ProductReceptionRepository
 import com.warehouse.camera.ui.adapter.FileStructureAdapter
 import com.warehouse.camera.utils.FileUtils
 import java.io.File
@@ -187,6 +188,7 @@ class FileStructureActivity : AppCompatActivity() {
     /**
      * Called when a file is deleted
      * Updates the view and refreshes the manufacturer summary if needed
+     * Also synchronizes the receptions list with the file system
      */
     private fun onFileDeleted() {
         // Find the manufacturer folder if we're inside a date or category folder
@@ -196,6 +198,10 @@ class FileStructureActivity : AppCompatActivity() {
         manufacturerFolder?.let {
             FileUtils.createManufacturerSummaryFile(it)
         }
+        
+        // Synchronize the receptions with the file system
+        val receptionRepository = ProductReceptionRepository(this)
+        receptionRepository.synchronizeWithFileSystem()
         
         // Refresh the view
         updateDirectoryView()

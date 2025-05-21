@@ -121,7 +121,7 @@ class FileStructureAdapter(
             .setTitle(R.string.delete)
             .setMessage(context.getString(messageResId, file.name))
             .setPositiveButton(R.string.confirm) { _, _ ->
-                if (FileUtils.deleteFileOrDirectory(file)) {
+                if (FileUtils.deleteFileOrDirectory(file, context)) {
                     // Remove item from adapter
                     remove(getItem(position))
                     notifyDataSetChanged()

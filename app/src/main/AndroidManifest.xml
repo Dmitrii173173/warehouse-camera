@@ -20,26 +20,27 @@
         
         <activity
             android:name=".MainActivity"
-            android:exported="true">
+            android:exported="true"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
         
-        <activity android:name=".ui.ManufacturerInfoActivity" />
-        <activity android:name=".ui.ArticleInfoActivity" />
-        <activity android:name=".ui.DefectDetailsActivity" />
-        <activity android:name=".ui.CameraActivity" />
-        <activity android:name=".ui.ItemListActivity" />
-        <activity android:name=".ui.GalleryActivity" />
-        <activity android:name=".ui.ImageViewerActivity" />
-        <activity android:name=".ui.gallery.GalleryBrowserActivity" />
-        <activity android:name=".ui.reception.ReceptionSelectionActivity" />
-        <activity android:name=".ui.reception.CreateReceptionActivity" />
-        <activity android:name=".ui.help.HelpActivity" />
-        <activity android:name=".ui.FileStructureActivity" />
-        <activity android:name=".ui.scanner.BarcodeScannerActivity" />
+        <activity android:name=".ui.ManufacturerInfoActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.ArticleInfoActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.DefectDetailsActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.CameraActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.ItemListActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.GalleryActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.ImageViewerActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.gallery.GalleryBrowserActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.reception.ReceptionSelectionActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.reception.CreateReceptionActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.help.HelpActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.FileStructureActivity" android:screenOrientation="portrait" />
+        <activity android:name=".ui.scanner.BarcodeScannerActivity" android:screenOrientation="portrait" />
         
         <provider
             android:name="androidx.core.content.FileProvider"

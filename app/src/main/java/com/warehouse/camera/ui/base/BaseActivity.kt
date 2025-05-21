@@ -1,6 +1,8 @@
 package com.warehouse.camera.ui.base
 
 import android.content.Context
+import android.content.pm.ActivityInfo
+import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import com.warehouse.camera.utils.LanguageUtils
 
@@ -17,9 +19,17 @@ open class BaseActivity : AppCompatActivity() {
         super.attachBaseContext(context)
     }
     
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // Lock screen orientation to portrait
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+    
     override fun onResume() {
         super.onResume()
         // Re-apply language when activity is resumed
         LanguageUtils.applyLanguage(this)
+        // Ensure orientation remains locked to portrait even after app resumes
+        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
     }
 }

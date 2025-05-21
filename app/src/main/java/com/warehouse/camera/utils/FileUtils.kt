@@ -28,11 +28,12 @@ object FileUtils {
     private const val TAG = "FileUtils"
     
     /**
-     * Deletes a file or directory recursively
+     * Deletes a file or directory recursively and removes entries from MediaStore
      * @param file The file or directory to delete
+     * @param context Optional context to update MediaStore for images
      * @return true if deletion was successful, false otherwise
      */
-    fun deleteFileOrDirectory(file: File): Boolean {
+    fun deleteFileOrDirectory(file: File, context: Context? = null): Boolean {
         if (!file.exists()) {
             return false
         }
@@ -43,12 +44,67 @@ object FileUtils {
             
             // Delete all children recursively
             for (child in children) {
-                deleteFileOrDirectory(child)
+                deleteFileOrDirectory(child, context)
+            }
+        } else {
+            // If it's an image file and context is provided, remove from MediaStore
+            if (context != null && isImageFile(file)) {
+                removeImageFromGallery(context, file)
             }
         }
         
         // Delete the file or empty directory
         return file.delete()
+    }
+    
+    /**
+     * Remove an image file from the MediaStore gallery
+     * @param context The context to use for ContentResolver
+     * @param file The image file to remove
+     */
+    private fun removeImageFromGallery(context: Context, file: File) {
+        try {
+            // Get the content resolver
+            val contentResolver = context.contentResolver
+            
+            // Create a selection for the file path
+            val selection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // For Android 10+, we need to use relative path
+                "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?" // Only works for photos in standard directories
+            } else {
+                // For older versions, use the absolute path
+                "${MediaStore.MediaColumns.DATA} = ?"
+            }
+            
+            // Selection argument depends on Android version
+            val selectionArgs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                // For Android 10+, extract the relative path
+                val path = file.absolutePath
+                val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath
+                val relativePath = if (path.startsWith(dcimPath)) {
+                    val pathAfterDcim = path.substring(dcimPath.length + 1)
+                    "DCIM/${pathAfterDcim.substringBeforeLast('/')}"
+                } else {
+                    // If not in DCIM, use a wildcard
+                    "%${file.parent?.substringAfterLast('/') ?: ""}%"
+                }
+                arrayOf(relativePath)
+            } else {
+                // For older versions, use the absolute path
+                arrayOf(file.absolutePath)
+            }
+            
+            // Try to delete from MediaStore
+            val deletedRows = contentResolver.delete(
+                MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                selection,
+                selectionArgs
+            )
+            
+            Log.d(TAG, "Removed $deletedRows entries from MediaStore gallery for: ${file.absolutePath}")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error removing image from gallery", e)
+        }
     }
     
     // Получить базовую директорию для хранения файлов приложения
@@ -388,13 +444,25 @@ object FileUtils {
                 parentDir.mkdirs()
             }
             
+            // Определяем исходный язык текста
+            val sourceLanguage = TranslationUtils.detectLanguage(defectDetails.description)
+            
+            // Переводим термины на все языки
+            val translatedReasons = TranslationUtils.getAvailableLanguages().associateWith { lang ->
+                TranslationUtils.translateReason(defectDetails.reason, lang)
+            }
+            
+            val translatedTemplates = TranslationUtils.getAvailableLanguages().associateWith { lang ->
+                TranslationUtils.translateTemplate(defectDetails.template, lang)
+            }
+            
             FileOutputStream(file).use { outputStream ->
                 // Russian content
                 val russianContent = """
                     Артикул: ${itemData.fullArticleCode}
                     Категория дефекта: ${itemData.defectCategory}
-                    Причина: ${defectDetails.reason}
-                    Шаблон: ${defectDetails.template}
+                    Причина: ${translatedReasons["ru"] ?: defectDetails.reason}
+                    Шаблон: ${translatedTemplates["ru"] ?: defectDetails.template}
                     Описание: ${defectDetails.description}
                 """.trimIndent()
                 
@@ -403,8 +471,8 @@ object FileUtils {
                     
                     物品编号: ${itemData.fullArticleCode}
                     缺陷类别: ${itemData.defectCategory}
-                    原因 (Reason): 
-                    模板 (Template): 
+                    原因 (Reason): ${translatedReasons["zh"] ?: defectDetails.reason}
+                    模板 (Template): ${translatedTemplates["zh"] ?: defectDetails.template}
                     描述: ${defectDetails.description}
                 """.trimIndent()
                 
@@ -413,8 +481,8 @@ object FileUtils {
                     
                     Article: ${itemData.fullArticleCode}
                     Defect Category: ${itemData.defectCategory}
-                    Reason (原因): 
-                    Template (模板): 
+                    Reason (原因): ${translatedReasons["en"] ?: defectDetails.reason}
+                    Template (模板): ${translatedTemplates["en"] ?: defectDetails.template}
                     Description: ${defectDetails.description}
                 """.trimIndent()
                 
@@ -466,7 +534,7 @@ object FileUtils {
     }
     
     // Check if file is an image
-    private fun isImageFile(file: File): Boolean {
+    fun isImageFile(file: File): Boolean {
         val name = file.name.lowercase(Locale.ROOT)
         return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
                name.endsWith(".png") || name.endsWith(".webp")
@@ -536,7 +604,7 @@ object FileUtils {
     /**
      * Checks if a string is in date format dd-MM-yyyy
      */
-    private fun isDateFormat(name: String): Boolean {
+    fun isDateFormat(name: String): Boolean {
         return try {
             val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
             dateFormat.isLenient = false

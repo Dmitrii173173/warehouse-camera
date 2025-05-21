@@ -20,6 +20,7 @@
     <string name="create">Create</string>
     <string name="error_invalid_date">Please select a valid date</string>
     <string name="reception_created">Reception created successfully</string>
+    <string name="reception_created_warning">Reception created but directory could not be created. Some functions may be limited.</string>
     <string name="reception_already_exists">Reception with this code and date already exists</string>
     <string name="reception_date_format">Created: %1$s</string>
     

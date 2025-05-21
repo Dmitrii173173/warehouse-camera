@@ -7,7 +7,7 @@ import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.warehouse.camera.utils.FileUtils
 import java.io.File
-import java.util.UUID
+import java.util.*
 
 /**
  * Репозиторий для управления проектами приёмки продукции
@@ -21,33 +21,16 @@ class ProductReceptionRepository(private val context: Context) {
      * Включает как сохраненные приемки, так и найденные в файловой системе
      */
     fun getAllReceptions(): List<ProductReception> {
-        // Call the synchronizeWithFileSystem method to make sure we have up-to-date data
-        synchronizeWithFileSystem()
-        
-        return getSavedReceptions()
-    }
-    
-    /**
-     * Синхронизирует сохраненные приёмки с файловой системой
-     * Удаляет приёмки, которых нет в файловой системе, и добавляет новые
-     */
-    fun synchronizeWithFileSystem() {
         // Получаем сохраненные приемки из SharedPreferences
         val savedReceptions = getSavedReceptions()
         
-        // Сканируем файловую систему на наличие приемок
+        // Сканируем файловую систему на наличие дополнительных приемок
         val fileReceptions = scanFileSystemForReceptions()
         
-        // Создаем новый список, содержащий только те приёмки, которые существуют в файловой системе
-        val validReceptions = savedReceptions.filter { savedReception ->
-            fileReceptions.any { fileReception -> 
-                fileReception.manufacturerCode == savedReception.manufacturerCode && 
-                fileReception.date == savedReception.date
-            }
-        }
+        // Объединяем два списка, удаляя дубликаты
+        val allReceptions = savedReceptions.toMutableList()
         
         // Добавляем приемки из файловой системы, которых нет в SharedPreferences
-        val allReceptions = validReceptions.toMutableList()
         for (fileReception in fileReceptions) {
             if (!allReceptions.any { it.manufacturerCode == fileReception.manufacturerCode && it.date == fileReception.date }) {
                 allReceptions.add(fileReception)
@@ -56,6 +39,8 @@ class ProductReceptionRepository(private val context: Context) {
         
         // Обновляем SharedPreferences, чтобы они содержали все найденные приемки
         saveReceptions(allReceptions)
+        
+        return allReceptions
     }
     
     /**
@@ -119,13 +104,6 @@ class ProductReceptionRepository(private val context: Context) {
         // Проверка на существование приёмки с такими же параметрами
         if (receptions.any { it.manufacturerCode == reception.manufacturerCode && it.date == reception.date }) {
             return false
-        }
-        
-        // Создаем директорию для новой приёмки
-        val projectDir = FileUtils.getProjectDirectory(context, reception)
-        if (projectDir == null || !projectDir.exists()) {
-            Log.e(TAG, "Failed to create directory for reception")
-            // Даже если директория не создалась, продолжаем добавление приёмки в список
         }
         
         receptions.add(reception)

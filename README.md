@@ -57,7 +57,7 @@ DCIM/warehouse/
 ### Шаги по установке
 1. Клонируйте репозиторий:
    ```
-   git clone https://github.com/YOUR_USERNAME/warehouse-camera.git
+   git clone https://github.com/Dmitrii173173/warehouse-camera.git
    ```
 2. Откройте проект в Android Studio
 3. Синхронизируйте проект с Gradle
@@ -85,7 +85,3 @@ DCIM/warehouse/
 ## Лицензия
 
 Этот проект распространяется под лицензией MIT. Подробности смотрите в файле [LICENSE](LICENSE).
-
-## Контакты
-
-Если у вас есть вопросы или предложения по улучшению приложения, свяжитесь с нами по адресу: your-email@example.com

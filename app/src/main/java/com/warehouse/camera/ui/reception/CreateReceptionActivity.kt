@@ -100,12 +100,24 @@ class CreateReceptionActivity : BaseActivity() {
         val dateString = dateFormat.format(selectedDate!!)
         
         val reception = ProductReception(
+            id = UUID.randomUUID().toString(),
             manufacturerCode = manufacturerCode,
-            date = dateString
+            date = dateString,
+            createdAt = System.currentTimeMillis()
         )
         
         if (receptionRepository.addReception(reception)) {
-            Toast.makeText(this, R.string.reception_created, Toast.LENGTH_SHORT).show()
+            // Дополнительно проверяем, что директория создана
+            val directory = receptionRepository.getReceptionDirectory(reception)
+            if (directory == null || !directory.exists()) {
+                Toast.makeText(this, R.string.reception_created_warning, Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(this, R.string.reception_created, Toast.LENGTH_SHORT).show()
+            }
+            
+            // Обновляем список приёмок в репозитории
+            receptionRepository.synchronizeWithFileSystem()
+            
             finish()
         } else {
             Toast.makeText(this, R.string.reception_already_exists, Toast.LENGTH_SHORT).show()

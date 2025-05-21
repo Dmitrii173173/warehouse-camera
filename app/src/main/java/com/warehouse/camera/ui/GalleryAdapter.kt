@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.warehouse.camera.R
 import com.warehouse.camera.model.GalleryItem
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -98,23 +99,32 @@ class GalleryAdapter(
         }
         
         private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-            // Raw height and width of image
-            val height = options.outHeight
-            val width = options.outWidth
-            var inSampleSize = 1
-            
-            if (height > reqHeight || width > reqWidth) {
-                val halfHeight: Int = height / 2
-                val halfWidth: Int = width / 2
-                
-                // Calculate the largest inSampleSize value that is a power of 2 and keeps both
-                // height and width larger than the requested height and width.
-                while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                    inSampleSize *= 2
-                }
-            }
-            
-            return inSampleSize
+        // Raw height and width of image
+        val height = options.outHeight
+        val width = options.outWidth
+        var inSampleSize = 1
+        
+        if (height > reqHeight || width > reqWidth) {
+        val halfHeight: Int = height / 2
+        val halfWidth: Int = width / 2
+        
+        // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+        // height and width larger than the requested height and width.
+        while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
+        inSampleSize *= 2
         }
+        }
+        
+        return inSampleSize
+        }
+    
+    /**
+     * Check if file is an image
+     */
+    fun isImageFile(file: File): Boolean {
+        val name = file.name.lowercase(Locale.ROOT)
+        return name.endsWith(".jpg") || name.endsWith(".jpeg") || 
+               name.endsWith(".png") || name.endsWith(".webp")
+    }
     }
 }

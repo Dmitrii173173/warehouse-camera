@@ -47,6 +47,8 @@ class ReceptionSelectionActivity : BaseActivity(), ReceptionAdapter.ReceptionCli
     
     override fun onResume() {
         super.onResume()
+        // Force repository to synchronize with file system before loading receptions
+        receptionRepository.synchronizeWithFileSystem()
         loadReceptions()
     }
     
