@@ -16,6 +16,7 @@ import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.ui.gallery.GalleryBrowserActivity
 import com.warehouse.camera.utils.FileUtils
 import com.warehouse.camera.utils.LanguageUtils
 import java.io.BufferedReader
@@ -90,25 +91,47 @@ class GalleryActivity : AppCompatActivity() {
             itemData.fullArticleCode
         )
         
-        // Load box photo if available
-        loadPhoto(itemData.boxPhotoPath, boxPhotoImageView, noBoxPhotoTextView)
+        // Load box photo if available (use the first one from the list if available)
+        val boxPhotoPath = if (itemData.boxPhotoPaths.isNotEmpty()) {
+            itemData.boxPhotoPaths[0]
+        } else {
+            itemData.boxPhotoPath
+        }
+        loadPhoto(boxPhotoPath, boxPhotoImageView, noBoxPhotoTextView)
         
-        // Set click listener for box photo
+        // Set click listener for box photo to open viewer or list if multiple photos
         boxPhotoImageView.setOnClickListener {
-            val boxPath = itemData.boxPhotoPath
-            if (boxPath != null && File(boxPath).exists()) {
-                openImageViewer(boxPath)
+            if (itemData.getBoxPhotoCount() > 1) {
+                // Open gallery browser with all box photos
+                val intent = Intent(this, GalleryBrowserActivity::class.java)
+                intent.putStringArrayListExtra("photosList", itemData.boxPhotoPaths)
+                intent.putExtra("photoType", getString(R.string.gallery_box_photo))
+                startActivity(intent)
+            } else if (boxPhotoPath != null && File(boxPhotoPath).exists()) {
+                // Open single photo viewer
+                openImageViewer(boxPhotoPath)
             }
         }
         
-        // Load product photo if available
-        loadPhoto(itemData.productPhotoPath, productPhotoImageView, noProductPhotoTextView)
+        // Load product photo if available (use the first one from the list if available)
+        val productPhotoPath = if (itemData.productPhotoPaths.isNotEmpty()) {
+            itemData.productPhotoPaths[0]
+        } else {
+            itemData.productPhotoPath
+        }
+        loadPhoto(productPhotoPath, productPhotoImageView, noProductPhotoTextView)
         
-        // Set click listener for product photo
+        // Set click listener for product photo to open viewer or list if multiple photos
         productPhotoImageView.setOnClickListener {
-            val productPath = itemData.productPhotoPath
-            if (productPath != null && File(productPath).exists()) {
-                openImageViewer(productPath)
+            if (itemData.getProductPhotoCount() > 1) {
+                // Open gallery browser with all product photos
+                val intent = Intent(this, GalleryBrowserActivity::class.java)
+                intent.putStringArrayListExtra("photosList", itemData.productPhotoPaths)
+                intent.putExtra("photoType", getString(R.string.gallery_product_photo))
+                startActivity(intent)
+            } else if (productPhotoPath != null && File(productPhotoPath).exists()) {
+                // Open single photo viewer
+                openImageViewer(productPhotoPath)
             }
         }
         

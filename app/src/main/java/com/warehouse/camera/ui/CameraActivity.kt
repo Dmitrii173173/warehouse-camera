@@ -14,6 +14,7 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
@@ -41,6 +42,8 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var retakeButton: Button
     private lateinit var usePhotoButton: Button
     private lateinit var nextItemButton: Button
+    private lateinit var addMoreButton: Button
+    private lateinit var photoCountText: TextView
     
     // Radio buttons are still in the layout but hidden
     private lateinit var radioGroupCircles: RadioGroup
@@ -61,6 +64,7 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var itemData: ItemData
     private var isBoxPhoto: Boolean = false
     private var defectCategory: Int = 1 // Default category
+    private var currentPhotoIndex: Int = 0 // Track the current photo index
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -94,6 +98,9 @@ class CameraActivity : AppCompatActivity() {
         isBoxPhoto = intent.getBooleanExtra("isBoxPhoto", false)
         defectCategory = intent.getIntExtra("defectCategory", 1)
         
+        // Initialize the counter for photos
+        currentPhotoIndex = if (isBoxPhoto) itemData.getBoxPhotoCount() else itemData.getProductPhotoCount()
+        
         // Initialize views
         viewFinder = findViewById(R.id.viewFinder)
         captureButton = findViewById(R.id.button_capture)
@@ -102,6 +109,11 @@ class CameraActivity : AppCompatActivity() {
         retakeButton = findViewById(R.id.button_retake)
         usePhotoButton = findViewById(R.id.button_use_photo)
         nextItemButton = findViewById(R.id.button_next_item)
+        addMoreButton = findViewById(R.id.button_add_more_photos)
+        photoCountText = findViewById(R.id.photo_count_text)
+        
+        // Update photo count display
+        updatePhotoCountDisplay()
         
         // The radio buttons are now hidden but we still keep references to them
         radioGroupCircles = findViewById(R.id.radioGroup_circles)
@@ -140,8 +152,17 @@ class CameraActivity : AppCompatActivity() {
         retakeButton.setOnClickListener { retakePhoto() }
         usePhotoButton.setOnClickListener { usePhoto() }
         nextItemButton.setOnClickListener { saveAndMoveToNextItem() }
+        addMoreButton.setOnClickListener { addMorePhotos() }
         
         cameraExecutor = Executors.newSingleThreadExecutor()
+    }
+    
+    private fun updatePhotoCountDisplay() {
+        val count = if (isBoxPhoto) itemData.getBoxPhotoCount() else itemData.getProductPhotoCount()
+        photoCountText.text = getString(R.string.photo_count, count)
+        
+        // Show the add more button only if there are already photos
+        addMoreButton.visibility = if (count > 0) View.VISIBLE else View.GONE
     }
     
     private fun startCamera() {
@@ -190,14 +211,28 @@ class CameraActivity : AppCompatActivity() {
             // Update the defect category in the item data
             itemData.defectCategory = defectCategory
             
+            // Determine if we need to create a new file with index
+            val needsIndex = currentPhotoIndex > 0
+            
             // Create output file
-            outputFile = FileUtils.createImageFile(
-                this,
-                manufacturerInfo,
-                articleInfo,
-                itemData,
-                isBoxPhoto
-            )
+            outputFile = if (needsIndex) {
+                FileUtils.createImageFile(
+                    this,
+                    manufacturerInfo,
+                    articleInfo,
+                    itemData,
+                    isBoxPhoto,
+                    currentPhotoIndex
+                )
+            } else {
+                FileUtils.createImageFile(
+                    this,
+                    manufacturerInfo,
+                    articleInfo,
+                    itemData,
+                    isBoxPhoto
+                )
+            }
             
             if (outputFile == null) {
                 Toast.makeText(this, R.string.error_create_directory, Toast.LENGTH_SHORT).show()
@@ -271,14 +306,18 @@ class CameraActivity : AppCompatActivity() {
                                 return
                             }
                             
-                            // Store both paths in the ItemData
+                            // Add the paths to the ItemData (in the lists and legacy fields)
                             if (isBoxPhoto) {
-                                itemData.boxPhotoPath = originalPath
-                                itemData.boxPhotoMarkedPath = markedPath
+                                itemData.addBoxPhoto(originalPath, markedPath)
                             } else {
-                                itemData.productPhotoPath = originalPath
-                                itemData.productPhotoMarkedPath = markedPath
+                                itemData.addProductPhoto(originalPath, markedPath)
                             }
+                            
+                            // Increment the photo index for next photo
+                            currentPhotoIndex++
+                            
+                            // Update the photo count display
+                            updatePhotoCountDisplay()
                             
                             Log.d(TAG, "Original photo saved at: $originalPath")
                             Log.d(TAG, "Marked photo saved at: $markedPath")
@@ -326,13 +365,56 @@ class CameraActivity : AppCompatActivity() {
         outputFile?.delete()
         outputFile = null
         outputUri = null
+        
+        // Decrement the photo index if we're deleting the most recent photo
+        if (currentPhotoIndex > 0) {
+            currentPhotoIndex--
+            
+            // Also remove the photo from ItemData
+            if (isBoxPhoto && itemData.boxPhotoPaths.isNotEmpty()) {
+                val lastIndex = itemData.boxPhotoPaths.size - 1
+                itemData.boxPhotoPaths.removeAt(lastIndex)
+                itemData.boxPhotoMarkedPaths.removeAt(lastIndex)
+                
+                // Update legacy fields
+                if (lastIndex == 0) {
+                    itemData.boxPhotoPath = null
+                    itemData.boxPhotoMarkedPath = null
+                } else if (lastIndex > 0) {
+                    itemData.boxPhotoPath = itemData.boxPhotoPaths[0]
+                    itemData.boxPhotoMarkedPath = itemData.boxPhotoMarkedPaths[0]
+                }
+            } else if (!isBoxPhoto && itemData.productPhotoPaths.isNotEmpty()) {
+                val lastIndex = itemData.productPhotoPaths.size - 1
+                itemData.productPhotoPaths.removeAt(lastIndex)
+                itemData.productPhotoMarkedPaths.removeAt(lastIndex)
+                
+                // Update legacy fields
+                if (lastIndex == 0) {
+                    itemData.productPhotoPath = null
+                    itemData.productPhotoMarkedPath = null
+                } else if (lastIndex > 0) {
+                    itemData.productPhotoPath = itemData.productPhotoPaths[0]
+                    itemData.productPhotoMarkedPath = itemData.productPhotoMarkedPaths[0]
+                }
+            }
+            
+            // Update display
+            updatePhotoCountDisplay()
+        }
     }
     
     private fun usePhoto() {
         // Update item data
         if (outputFile == null || !outputFile!!.exists()) {
-            Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
-            return
+            // If we have at least one photo, allow to proceed
+            if ((isBoxPhoto && itemData.getBoxPhotoCount() > 0) || 
+                (!isBoxPhoto && itemData.getProductPhotoCount() > 0)) {
+                // Continue with saving
+            } else {
+                Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
+                return
+            }
         }
         
         // Update category in the item data
@@ -345,9 +427,20 @@ class CameraActivity : AppCompatActivity() {
         finish()
     }
     
+    private fun addMorePhotos() {
+        // Hide preview container and go back to camera
+        previewContainer.visibility = View.GONE
+        
+        // Ready for the next photo
+        outputFile = null
+        outputUri = null
+    }
+    
     private fun saveAndMoveToNextItem() {
-        // First save current photo
-        if (outputFile == null || !outputFile!!.exists()) {
+        // First save current photo if one was taken
+        if ((outputFile == null || !outputFile!!.exists()) && 
+            ((isBoxPhoto && itemData.getBoxPhotoCount() == 0) || 
+             (!isBoxPhoto && itemData.getProductPhotoCount() == 0))) {
             Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
             return
         }

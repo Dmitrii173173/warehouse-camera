@@ -256,6 +256,18 @@ object FileUtils {
         itemData: ItemData,
         isBoxPhoto: Boolean
     ): File? {
+        return createImageFile(context, manufacturerInfo, articleInfo, itemData, isBoxPhoto, null)
+    }
+    
+    // Overloaded version to support multiple photos
+    fun createImageFile(
+        context: Context,
+        manufacturerInfo: ManufacturerInfo,
+        articleInfo: ArticleInfo,
+        itemData: ItemData,
+        isBoxPhoto: Boolean,
+        photoIndex: Int?
+    ): File? {
         try {
             val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData)
             if (itemDir == null) {
@@ -264,7 +276,13 @@ object FileUtils {
             }
             
             val prefix = if (isBoxPhoto) "damage" else "barcode"
-            val imageFileName = "$prefix-${itemData.fullArticleCode}.jpg"
+            
+            // Create a unique filename based on whether this is a multiple photo or not
+            val imageFileName = if (photoIndex != null) {
+                "$prefix-${itemData.fullArticleCode}-$photoIndex.jpg"
+            } else {
+                "$prefix-${itemData.fullArticleCode}.jpg"
+            }
             
             // Make sure parent directory exists and is writable
             if (!itemDir.exists()) {

@@ -111,6 +111,8 @@
     <string name="retake">Переснять</string>
     <string name="use_photo">Использовать это фото</string>
     <string name="next_item">Следующий</string>
+    <string name="add_more_photos">Добавить еще фото</string>
+    <string name="photo_count">Фото: %1$d</string>
     
     <!-- Gallery Screen -->
     <string name="gallery_title">Photo Gallery</string>

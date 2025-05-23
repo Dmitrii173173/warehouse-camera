@@ -1,118 +1,100 @@
 package com.warehouse.camera.ui.gallery
 
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.View
-import android.widget.ProgressBar
-import android.widget.TextView
+import android.view.MenuItem
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.warehouse.camera.R
 import com.warehouse.camera.model.GalleryItem
-import com.warehouse.camera.ui.GalleryAdapter
+import com.warehouse.camera.ui.ImageViewerActivity
 import java.io.File
 import java.util.Date
 
 class GalleryBrowserActivity : AppCompatActivity() {
     
     private lateinit var recyclerView: RecyclerView
-    private lateinit var progressBar: ProgressBar
-    private lateinit var emptyTextView: TextView
+    private lateinit var adapter: GalleryBrowserAdapter
+    private var photosList: ArrayList<String> = ArrayList()
+    private var photoType: String = ""
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_gallery_browser)
         
-        recyclerView = findViewById(R.id.recyclerView)
-        progressBar = findViewById(R.id.progressBar)
-        emptyTextView = findViewById(R.id.textView_empty)
+        // Setup toolbar
+        val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         
-        // Set up RecyclerView
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
+        // Get photos list from intent
+        photosList = intent.getStringArrayListExtra("photosList") ?: ArrayList()
+        photoType = intent.getStringExtra("photoType") ?: getString(R.string.gallery_image)
         
-        // Load gallery items
-        loadGalleryItems()
+        // Set title
+        supportActionBar?.title = "$photoType (${photosList.size})"
+        
+        recyclerView = findViewById(R.id.recyclerView_photos)
+        setupRecyclerView()
     }
     
-    private fun loadGalleryItems() {
-        progressBar.visibility = View.VISIBLE
-        
-        // Get application files directory
-        val filesDir = getExternalFilesDir(null) ?: filesDir
-        
-        // Load in background
-        Thread {
-            val galleryItems = mutableListOf<GalleryItem>()
-            
-            // Recursively scan directories
-            scanDirectory(filesDir, galleryItems)
-            
-            // Update UI on main thread
-            runOnUiThread {
-                progressBar.visibility = View.GONE
-                
-                if (galleryItems.isEmpty()) {
-                    emptyTextView.visibility = View.VISIBLE
-                    recyclerView.visibility = View.GONE
+    private fun setupRecyclerView() {
+        val galleryItems = photosList.mapNotNull { path ->
+            val file = File(path)
+            if (file.exists()) {
+                val type = if (path.contains("damage")) {
+                    GalleryItem.ItemType.BOX_PHOTO
                 } else {
-                    emptyTextView.visibility = View.GONE
-                    recyclerView.visibility = View.VISIBLE
-                    recyclerView.adapter = GalleryAdapter(this, galleryItems)
+                    GalleryItem.ItemType.PRODUCT_PHOTO
                 }
-            }
-        }.start()
-    }
-    
-    private fun scanDirectory(directory: File, galleryItems: MutableList<GalleryItem>) {
-        directory.listFiles()?.forEach { file ->
-            if (file.isDirectory) {
-                scanDirectory(file, galleryItems)
-            } else {
-                val galleryItem = createGalleryItem(file)
-                if (galleryItem != null) {
-                    galleryItems.add(galleryItem)
-                }
-            }
-        }
-    }
-    
-    private fun createGalleryItem(file: File): GalleryItem? {
-        return try {
-            val name = file.name
-            val path = file.absolutePath
-            val date = Date(file.lastModified())
-            
-            // Parse article code from filename (assuming format like "123456AA-1.jpg")
-            val articleCode = if (name.contains("-")) {
-                name.substringBefore("-")
-            } else {
-                name.substringBeforeLast(".")
-            }
-            
-            // Determine type based on filename
-            val type = when {
-                name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") -> {
-                    if (name.contains("-1")) {
-                        GalleryItem.ItemType.BOX_PHOTO
-                    } else if (name.contains("-2")) {
-                        GalleryItem.ItemType.PRODUCT_PHOTO
+                
+                // Extract article code from the file name
+                val articleCode = try {
+                    val fileName = file.name
+                    if (fileName.contains("-")) {
+                        val parts = fileName.split("-")
+                        if (parts.size >= 2) {
+                            // Remove _marked suffix and .jpg extension if present
+                            parts[1].replace("_marked", "").replace(".jpg", "")
+                        } else {
+                            "Unknown"
+                        }
                     } else {
-                        GalleryItem.ItemType.UNKNOWN
+                        "Unknown"
                     }
+                } catch (e: Exception) {
+                    "Unknown"
                 }
-                name.endsWith(".txt") -> GalleryItem.ItemType.TEXT_FILE
-                else -> GalleryItem.ItemType.UNKNOWN
-            }
-            
-            GalleryItem(file, name, date, type, articleCode, path)
-        } catch (e: Exception) {
-            Log.e(TAG, "Error creating gallery item for ${file.absolutePath}: ${e.message}", e)
-            null
+                
+                GalleryItem(
+                    file = file,
+                    name = file.name,
+                    path = path,
+                    date = Date(file.lastModified()),
+                    type = type,
+                    articleCode = articleCode
+                )
+            } else null
         }
+        
+        adapter = GalleryBrowserAdapter(this, galleryItems) { item ->
+            // Open image viewer when clicked
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            intent.putExtra("galleryItem", item)
+            startActivity(intent)
+        }
+        
+        recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.adapter = adapter
     }
     
-    companion object {
-        private const val TAG = "GalleryBrowserActivity"
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == android.R.id.home) {
+            finish()
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 }
