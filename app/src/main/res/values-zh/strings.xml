@@ -97,6 +97,7 @@
     
     <!-- Camera Screen -->
     <string name="camera_title">拍照</string>
+    <string name="normal_photo_mode">普通照片</string>
     <string name="capture">拍摄</string>
     <string name="retake">重拍</string>
     <string name="use_photo">使用这张照片</string>

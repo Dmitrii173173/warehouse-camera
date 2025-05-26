@@ -15,6 +15,7 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
+import android.widget.Switch
 import android.widget.TextView
 import android.widget.Toast
 import androidx.camera.core.*
@@ -48,6 +49,7 @@ class CameraActivity : BaseActivity() {
     private lateinit var photoCountText: TextView
     private lateinit var backButton: ImageButton
     private lateinit var backPreviewButton: ImageButton
+    private lateinit var normalPhotoSwitch: Switch
     
     // Radio buttons for the color circles
     private lateinit var radioGroupCircles: RadioGroup
@@ -62,6 +64,7 @@ class CameraActivity : BaseActivity() {
     private var outputUri: Uri? = null
     private var selectedCircleColor: Int = Color.GREEN
     private var selectedCircleText: String = "1"
+    private var normalPhotoMode: Boolean = false // Режим обычного фото без маркера
     
     private lateinit var manufacturerInfo: ManufacturerInfo
     private lateinit var articleInfo: ArticleInfo
@@ -117,6 +120,7 @@ class CameraActivity : BaseActivity() {
         photoCountText = findViewById(R.id.photo_count_text)
         backButton = findViewById(R.id.button_back)
         backPreviewButton = findViewById(R.id.button_back_preview)
+        normalPhotoSwitch = findViewById(R.id.switch_normal_photo)
         
         // Update photo count display
         updatePhotoCountDisplay()
@@ -180,6 +184,9 @@ class CameraActivity : BaseActivity() {
         addMoreButton.setOnClickListener { addMorePhotos() }
         backButton.setOnClickListener { onBackPressed() }
         backPreviewButton.setOnClickListener { retakePhoto() }
+        normalPhotoSwitch.setOnCheckedChangeListener { _, isChecked ->
+            normalPhotoMode = isChecked
+        }
         
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -316,13 +323,20 @@ class CameraActivity : BaseActivity() {
                             // The bitmap is already saved by fixPhotoOrientation method
                             // FileUtils.saveBitmapToFile(bitmap, outputFile!!)
                             
-                            // Create a marked version with the defect category indicator
-                            val markedBitmap = ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)
-                            
                             // Create file path for marked version
                             val originalPath = outputFile!!.absolutePath
                             val markedPath = originalPath.replace(".jpg", "_marked.jpg")
                             val markedFile = File(markedPath)
+                            
+                            // Check if normal photo mode is enabled
+                            val markedBitmap: Bitmap
+                            if (normalPhotoMode) {
+                                // In normal photo mode, don't add the circle
+                                markedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                            } else {
+                                // Create a marked version with the defect category indicator
+                                markedBitmap = ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)
+                            }
                             
                             // Save the marked version
                             val markedSaved = FileUtils.saveBitmapToFile(markedBitmap, markedFile)

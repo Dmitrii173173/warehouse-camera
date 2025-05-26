@@ -97,6 +97,7 @@
     
     <!-- Camera Screen -->
     <string name="camera_title">Сделать фото</string>
+    <string name="normal_photo_mode">Обычное фото</string>
     <string name="capture">Снять</string>
     <string name="retake">Переснять</string>
     <string name="use_photo">Использовать это фото</string>

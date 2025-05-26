@@ -43,18 +43,28 @@
             android:textSize="16sp" />
     </LinearLayout>
 
-    <!-- Color selection circles -->
+    <!-- Color selection circles and normal photo toggle -->
     <LinearLayout
         android:id="@+id/importance_indicators"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginBottom="24dp"
         android:background="#80000000"
-        android:orientation="horizontal"
+        android:orientation="vertical"
         android:padding="8dp"
         android:layout_marginStart="16dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Normal photo toggle switch -->
+        <Switch
+            android:id="@+id/switch_normal_photo"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="8dp"
+            android:text="@string/normal_photo_mode"
+            android:textColor="@color/white"
+            android:textSize="14sp" />
 
         <RadioGroup
             android:id="@+id/radioGroup_circles"
