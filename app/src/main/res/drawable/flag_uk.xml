@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="60"
+    android:viewportHeight="30">
+    
+    <!-- Blue background -->
+    <path
+        android:fillColor="#00247D"
+        android:pathData="M0,0 L60,0 L60,30 L0,30 z" />
+    
+    <!-- White diagonal cross (Saint Andrew) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M0,0 L60,30 M60,0 L0,30" 
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="6" />
+    
+    <!-- Red diagonal cross (Saint Patrick) -->
+    <path
+        android:fillColor="#CF142B"
+        android:pathData="M0,0 L60,30 M60,0 L0,30" 
+        android:strokeColor="#CF142B"
+        android:strokeWidth="2" />
+    
+    <!-- White cross (Saint George) -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M30,0 L30,30 M0,15 L60,15" 
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="10" />
+    
+    <!-- Red cross (Saint George) -->
+    <path
+        android:fillColor="#CF142B"
+        android:pathData="M30,0 L30,30 M0,15 L60,15" 
+        android:strokeColor="#CF142B"
+        android:strokeWidth="6" />
+</vector>

@@ -1,7 +1,7 @@
 # Warehouse Camera App
 
 ## Project Overview
-The Warehouse Camera application is designed for documenting damaged goods in a warehouse environment. The app allows users to:
+The Warehouse Camera application is designed for documenting damaged goods in a warehouse environment with an elegant, Apple-inspired minimalist interface. The app allows users to:
 - Input manufacturer information
 - Specify articles and quantities
 - Document defects with predefined categories and templates
@@ -18,6 +18,13 @@ The Warehouse Camera application is designed for documenting damaged goods in a 
 5. **ItemListActivity**: For listing all items (based on quantity) and taking photos
 6. **CameraActivity**: For taking photos and previewing them
 
+### UI Design Principles:
+- **Minimalist Apple-style interface**: Clean, modern design with rounded corners and ample whitespace
+- **Card-based layout**: Information presented in clearly defined card components
+- **Smooth animations**: Button press effects and screen transitions for enhanced user experience
+- **Intuitive navigation**: Consistent back buttons on all screens
+- **Visual feedback**: Interactive elements provide visual feedback when touched
+
 ### Data Model:
 - **ManufacturerInfo**: Stores manufacturer code, date, defect category
 - **ArticleInfo**: Stores article code and quantity
@@ -28,6 +35,7 @@ The Warehouse Camera application is designed for documenting damaged goods in a 
 - **FileUtils**: Manages directory creation and file operations
 - **PermissionUtils**: Handles camera and storage permissions
 - **LanguageUtils**: Manages multiple language support (English, Russian, Chinese)
+- **ImageUtils**: Handles image processing and markers
 
 ## File Structure
 The app creates files in the following structure:
@@ -77,6 +85,14 @@ DCIM/Camera/warehouse/9002/05-12-2025/1/666888AA-1/
 - Structured file system organization
 - Dynamic item list based on quantity
 - Comprehensive validation at each step
+- Smooth animations and transitions
+
+### Visual Design Elements:
+- Soft rounded corners (12dp radius)
+- Consistent card-based UI components
+- Subtle shadows and depth effects
+- Interactive button animations
+- Color-coded importance indicators
 
 ### Permissions Required:
 - Camera permission: For taking photos

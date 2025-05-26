@@ -1,14 +1,17 @@
 package com.warehouse.camera.ui
 
+import android.content.Intent
 import android.os.Bundle
 import android.widget.ListView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.warehouse.camera.R
+import com.warehouse.camera.model.GalleryItem
 import com.warehouse.camera.model.project.ProductReceptionRepository
 import com.warehouse.camera.ui.adapter.FileStructureAdapter
 import com.warehouse.camera.utils.FileUtils
 import java.io.File
+import java.util.Date
 
 class FileStructureActivity : AppCompatActivity() {
 
@@ -124,9 +127,39 @@ class FileStructureActivity : AppCompatActivity() {
                     .show()
             }
         } else if (isImageFile(file)) {
-            // Здесь можно добавить логику просмотра изображений
-            // Например, открыть ImageViewerActivity
-            android.widget.Toast.makeText(this, R.string.image_viewer_description, android.widget.Toast.LENGTH_SHORT).show()
+            // Открываем просмотрщик изображений
+            val intent = Intent(this, ImageViewerActivity::class.java)
+            val itemType = when {
+                file.name.startsWith("damage-") -> GalleryItem.ItemType.BOX_PHOTO
+                file.name.startsWith("barcode-") -> GalleryItem.ItemType.PRODUCT_PHOTO
+                else -> GalleryItem.ItemType.UNKNOWN
+            }
+            
+            // Извлекаем код артикула из имени файла или используем пустую строку
+            val articleCode = try {
+                val fileName = file.name
+                val prefixEnd = fileName.indexOf('-') + 1
+                val suffixStart = fileName.lastIndexOf('.')
+                if (prefixEnd > 0 && suffixStart > prefixEnd) {
+                    fileName.substring(prefixEnd, suffixStart).replace("_marked", "")
+                } else {
+                    ""
+                }
+            } catch (e: Exception) {
+                ""
+            }
+            
+            val galleryItem = GalleryItem(
+                file = file,
+                name = file.name,
+                date = Date(file.lastModified()),
+                type = itemType,
+                articleCode = articleCode,
+                path = file.absolutePath
+            )
+            
+            intent.putExtra("galleryItem", galleryItem)
+            startActivity(intent)
         } else {
             // Для других типов файлов показываем информацию о файле
             val fileInfo = """

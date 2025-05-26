@@ -9,16 +9,17 @@ import android.widget.RadioGroup
 import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.google.android.material.textfield.TextInputEditText
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.ui.base.BaseActivity
 import com.warehouse.camera.ui.scanner.BarcodeScannerActivity
-import com.warehouse.camera.utils.LanguageUtils
 
-class ArticleInfoActivity : AppCompatActivity() {
+class ArticleInfoActivity : BaseActivity() {
 
+    private lateinit var toolbar: Toolbar
     private lateinit var articleCodeEditText: TextInputEditText
     private lateinit var quantityEditText: TextInputEditText
     private lateinit var defectCategoryRadioGroup: RadioGroup
@@ -31,9 +32,6 @@ class ArticleInfoActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Apply saved language
-        LanguageUtils.applyLanguage(this)
-        
         setContentView(R.layout.activity_article_info)
         
         // Get manufacturer info from intent
@@ -45,11 +43,21 @@ class ArticleInfoActivity : AppCompatActivity() {
         } ?: throw IllegalStateException("ManufacturerInfo must be provided")
         
         // Initialize views
+        toolbar = findViewById(R.id.toolbar)
         articleCodeEditText = findViewById(R.id.editText_article_code)
         quantityEditText = findViewById(R.id.editText_quantity)
         defectCategoryRadioGroup = findViewById(R.id.radioGroup_defect_category)
         nextButton = findViewById(R.id.button_next)
         scanBarcodeButton = findViewById(R.id.button_scan_barcode)
+        
+        // Setup toolbar with back button
+        setupToolbar(toolbar)
+        
+        // Ensure first radio button is checked by default
+        if (defectCategoryRadioGroup.checkedRadioButtonId == -1) {
+            val firstRadioButton = findViewById<RadioButton>(R.id.radioButton_category_1)
+            firstRadioButton.isChecked = true
+        }
         
         // Регистрируем обработчик результата сканирования
         barcodeScannerLauncher = registerForActivityResult(
@@ -68,6 +76,7 @@ class ArticleInfoActivity : AppCompatActivity() {
         scanBarcodeButton.setOnClickListener {
             val intent = Intent(this, BarcodeScannerActivity::class.java)
             barcodeScannerLauncher.launch(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
         
         // Next button click
@@ -87,7 +96,7 @@ class ArticleInfoActivity : AppCompatActivity() {
                 val intent = Intent(this, DefectDetailsActivity::class.java)
                 intent.putExtra("manufacturerInfo", manufacturerInfo)
                 intent.putExtra("articleInfo", articleInfo)
-                startActivity(intent)
+                startActivityWithAnimation(intent)
             }
         }
     }

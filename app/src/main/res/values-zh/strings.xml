@@ -6,8 +6,8 @@
     <string name="menu_start">开始记录</string>
     <string name="menu_settings">设置</string>
     <string name="menu_language">语言</string>
-    <string name="language_english">英语</string>
-    <string name="language_russian">俄语</string>
+    <string name="language_english">EN</string>
+    <string name="language_russian">RU</string>
     <string name="language_chinese">中文</string>
     <string name="menu_gallery">相册</string>
     <string name="menu_help">使用说明</string>
@@ -83,8 +83,8 @@
     
     <!-- Item List Screen -->
     <string name="item_list_title">要记录的项目</string>
-    <string name="photo_box">拍摄箱子照片</string>
-    <string name="photo_product">拍摄产品照片</string>
+    <string name="photo_box">拍摄损坏照片</string>
+    <string name="photo_product">拍摄带盒子的条形码照片</string>
     <string name="save">保存</string>
     <string name="complete">完成</string>
     <string name="item_saved">项目保存成功</string>
@@ -100,6 +100,12 @@
     <string name="capture">拍摄</string>
     <string name="retake">重拍</string>
     <string name="use_photo">使用这张照片</string>
+    <string name="next_item">下一个项目</string>
+    <string name="add_more_photos">添加更多照片</string>
+    <string name="photo_count">照片: %1$d</string>
+    <string name="back">返回</string>
+    <string name="preview">预览</string>
+    <string name="take_photo">拍照</string>
     
     <!-- Gallery Screen -->
     <string name="gallery_title">相册</string>

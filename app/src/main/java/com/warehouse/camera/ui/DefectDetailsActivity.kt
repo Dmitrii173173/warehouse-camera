@@ -2,21 +2,26 @@ package com.warehouse.camera.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
+import android.widget.AdapterView
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.google.android.material.textfield.TextInputEditText
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
-import com.warehouse.camera.utils.LanguageUtils
+import com.warehouse.camera.ui.base.BaseActivity
 
-class DefectDetailsActivity : AppCompatActivity() {
+class DefectDetailsActivity : BaseActivity() {
 
+    private lateinit var toolbar: Toolbar
     private lateinit var reasonSpinner: Spinner
     private lateinit var templateSpinner: Spinner
     private lateinit var descriptionEditText: TextInputEditText
@@ -27,9 +32,6 @@ class DefectDetailsActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Apply saved language
-        LanguageUtils.applyLanguage(this)
-        
         setContentView(R.layout.activity_defect_details)
         
         // Get data from intent
@@ -48,10 +50,14 @@ class DefectDetailsActivity : AppCompatActivity() {
         } ?: throw IllegalStateException("ArticleInfo must be provided")
         
         // Initialize views
+        toolbar = findViewById(R.id.toolbar)
         reasonSpinner = findViewById(R.id.spinner_reason)
         templateSpinner = findViewById(R.id.spinner_template)
         descriptionEditText = findViewById(R.id.editText_description)
         nextButton = findViewById(R.id.button_next)
+        
+        // Setup toolbar with back button
+        setupToolbar(toolbar)
         
         // Setup spinners
         setupReasonSpinner()
@@ -79,7 +85,7 @@ class DefectDetailsActivity : AppCompatActivity() {
                 intent.putExtra("articleInfo", articleInfo)
                 intent.putExtra("defectDetails", defectDetails)
                 intent.putParcelableArrayListExtra("items", ArrayList(items))
-                startActivity(intent)
+                startActivityWithAnimation(intent)
             }
         }
     }
@@ -95,9 +101,33 @@ class DefectDetailsActivity : AppCompatActivity() {
             getString(R.string.reason_undercarriage)
         )
         
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, reasons)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        // Create a custom adapter for better styling
+        val adapter = object : ArrayAdapter<String>(
+            this,
+            R.layout.spinner_item,
+            reasons
+        ) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                view.setPadding(24, 16, 24, 16)
+                return view
+            }
+        }
+        
         reasonSpinner.adapter = adapter
+        
+        // Add a selection listener
+        reasonSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // Apply style to selected item
+                val selectedItem = parent?.getChildAt(0) as? TextView
+                selectedItem?.setTextColor(resources.getColor(R.color.colorTextPrimary, theme))
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Nothing to do here
+            }
+        }
     }
     
     private fun setupTemplateSpinner() {
@@ -117,9 +147,33 @@ class DefectDetailsActivity : AppCompatActivity() {
             getString(R.string.template_chip)
         )
         
-        val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, templates)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        // Create a custom adapter for better styling
+        val adapter = object : ArrayAdapter<String>(
+            this,
+            R.layout.spinner_item,
+            templates
+        ) {
+            override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View {
+                val view = super.getDropDownView(position, convertView, parent)
+                view.setPadding(24, 16, 24, 16)
+                return view
+            }
+        }
+        
         templateSpinner.adapter = adapter
+        
+        // Add a selection listener
+        templateSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
+                // Apply style to selected item
+                val selectedItem = parent?.getChildAt(0) as? TextView
+                selectedItem?.setTextColor(resources.getColor(R.color.colorTextPrimary, theme))
+            }
+            
+            override fun onNothingSelected(parent: AdapterView<*>?) {
+                // Nothing to do here
+            }
+        }
     }
     
     private fun validateInputs(): Boolean {

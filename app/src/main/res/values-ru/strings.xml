@@ -6,9 +6,9 @@
     <string name="menu_start">Начать документирование</string>
     <string name="menu_settings">Настройки</string>
     <string name="menu_language">Язык</string>
-    <string name="language_english">Английский</string>
-    <string name="language_russian">Русский</string>
-    <string name="language_chinese">Китайский</string>
+    <string name="language_english">EN</string>
+    <string name="language_russian">RU</string>
+    <string name="language_chinese">中文</string>
     <string name="menu_gallery">Галерея</string>
     <string name="menu_help">Инструкции</string>
     
@@ -83,8 +83,8 @@
     
     <!-- Item List Screen -->
     <string name="item_list_title">Элементы для документирования</string>
-    <string name="photo_box">Сделать фото коробки</string>
-    <string name="photo_product">Сделать фото продукта</string>
+    <string name="photo_box">СДЕЛАТЬ ФОТО ПОВРЕЖДЕНИЯ</string>
+    <string name="photo_product">СДЕЛАТЬ ФОТО ШТРИХ КОДА С КОРОБКОЙ</string>
     <string name="save">Сохранить</string>
     <string name="complete">Завершить</string>
     <string name="item_saved">Элемент успешно сохранен</string>
@@ -100,6 +100,12 @@
     <string name="capture">Снять</string>
     <string name="retake">Переснять</string>
     <string name="use_photo">Использовать это фото</string>
+    <string name="next_item">Следующий элемент</string>
+    <string name="add_more_photos">Добавить еще фото</string>
+    <string name="photo_count">Фото: %1$d</string>
+    <string name="back">Назад</string>
+    <string name="preview">Предпросмотр</string>
+    <string name="take_photo">Сделать фото</string>
     
     <!-- Gallery Screen -->
     <string name="gallery_title">Фотогалерея</string>

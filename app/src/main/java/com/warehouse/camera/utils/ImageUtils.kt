@@ -4,10 +4,14 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Rect
+import android.media.ExifInterface
+import android.util.Log
 import java.io.File
 import java.io.FileOutputStream
+import java.io.IOException
 
 /**
  * Utility class for image processing operations
@@ -153,6 +157,78 @@ object ImageUtils {
         } catch (e: Exception) {
             e.printStackTrace()
             false
+        }
+    }
+    
+    /**
+     * Fixes the orientation of an image file based on EXIF information
+     * @param photoPath Path to the image file
+     * @return The corrected bitmap, or null if an error occurred
+     */
+    fun fixPhotoOrientation(photoPath: String): Bitmap? {
+        try {
+            // Get the original bitmap
+            val options = BitmapFactory.Options().apply {
+                inJustDecodeBounds = false
+            }
+            var bitmap = BitmapFactory.decodeFile(photoPath, options) ?: return null
+            
+            // Get the EXIF orientation
+            val exif = ExifInterface(photoPath)
+            val orientation = exif.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+            
+            Log.d("ImageUtils", "Original EXIF orientation: $orientation")
+            
+            // Create a matrix for the rotation
+            val matrix = Matrix()
+            
+            // Apply rotation based on orientation
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+                ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+                ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+                ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.preScale(-1f, 1f)
+                ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
+                ExifInterface.ORIENTATION_TRANSPOSE -> {
+                    matrix.preScale(-1f, 1f)
+                    matrix.postRotate(90f)
+                }
+                ExifInterface.ORIENTATION_TRANSVERSE -> {
+                    matrix.preScale(-1f, 1f)
+                    matrix.postRotate(270f)
+                }
+                else -> return bitmap // No rotation needed
+            }
+            
+            // Apply the transformation and get a new bitmap
+            val rotatedBitmap = Bitmap.createBitmap(
+                bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+            )
+            
+            // Clean up the original bitmap if it's different from the rotated one
+            if (rotatedBitmap != bitmap) {
+                bitmap.recycle()
+                bitmap = rotatedBitmap
+            }
+            
+            // Save the rotated bitmap back to the file
+            FileOutputStream(photoPath).use { out ->
+                bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+            }
+            
+            // Clear the orientation in EXIF data
+            exif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+            exif.saveAttributes()
+            
+            Log.d("ImageUtils", "Photo orientation fixed: $photoPath")
+            return bitmap
+            
+        } catch (e: IOException) {
+            Log.e("ImageUtils", "Error fixing photo orientation", e)
+            return null
         }
     }
 }

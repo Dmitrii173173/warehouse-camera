@@ -4,21 +4,19 @@ import android.app.DatePickerDialog
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
-import android.widget.RadioButton
-import android.widget.RadioGroup
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import com.google.android.material.textfield.TextInputEditText
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ManufacturerInfo
 import com.warehouse.camera.model.project.ProductReception
 import com.warehouse.camera.ui.base.BaseActivity
-import com.warehouse.camera.utils.LanguageUtils
 import java.text.SimpleDateFormat
 import java.util.*
 
 class ManufacturerInfoActivity : BaseActivity() {
 
+    private lateinit var toolbar: Toolbar
     private lateinit var manufacturerCodeEditText: TextInputEditText
     private lateinit var datePickerButton: Button
     private lateinit var nextButton: Button
@@ -31,9 +29,13 @@ class ManufacturerInfoActivity : BaseActivity() {
         setContentView(R.layout.activity_manufacturer_info)
         
         // Initialize views
+        toolbar = findViewById(R.id.toolbar)
         manufacturerCodeEditText = findViewById(R.id.editText_manufacturer_code)
         datePickerButton = findViewById(R.id.button_date_picker)
         nextButton = findViewById(R.id.button_next)
+        
+        // Setup toolbar with back button
+        setupToolbar(toolbar)
         
         // Set default date to today
         val today = Calendar.getInstance()
@@ -77,13 +79,24 @@ class ManufacturerInfoActivity : BaseActivity() {
                 // Navigate to next screen
                 val intent = Intent(this, ArticleInfoActivity::class.java)
                 intent.putExtra("manufacturerInfo", manufacturerInfo)
-                startActivity(intent)
+                startActivityWithAnimation(intent)
             }
         }
     }
     
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
+        
+        // Parse the current date to set the date picker
+        try {
+            val dateFormat = SimpleDateFormat("dd-MM-yyyy", Locale.getDefault())
+            val date = dateFormat.parse(selectedDate)
+            if (date != null) {
+                calendar.time = date
+            }
+        } catch (e: Exception) {
+            // Use today's date as fallback
+        }
         
         val datePickerDialog = DatePickerDialog(
             this,
@@ -108,6 +121,11 @@ class ManufacturerInfoActivity : BaseActivity() {
         val manufacturerCode = manufacturerCodeEditText.text.toString()
         
         // Check manufacturer code
+        if (manufacturerCode.isEmpty()) {
+            Toast.makeText(this, R.string.error_empty_manufacturer_code, Toast.LENGTH_SHORT).show()
+            return false
+        }
+        
         if (manufacturerCode.length != 4 || !manufacturerCode.all { it.isDigit() }) {
             Toast.makeText(this, R.string.error_invalid_manufacturer_code, Toast.LENGTH_SHORT).show()
             return false

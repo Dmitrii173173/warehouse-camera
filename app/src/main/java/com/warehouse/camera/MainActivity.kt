@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import com.warehouse.camera.ui.base.BaseActivity
 import com.warehouse.camera.ui.FileStructureActivity
@@ -30,29 +31,43 @@ class MainActivity : BaseActivity() {
         
         // Start documenting button
         findViewById<Button>(R.id.btn_start_documenting).setOnClickListener {
-            startActivity(Intent(this, ReceptionSelectionActivity::class.java))
+            val intent = Intent(this, ReceptionSelectionActivity::class.java)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
         
-        // Gallery button
-        findViewById<Button>(R.id.btn_gallery).setOnClickListener {
-            startActivity(Intent(this, GalleryBrowserActivity::class.java))
+        // File Structure button
+        findViewById<Button>(R.id.btn_file_structure).setOnClickListener {
+            val intent = Intent(this, FileStructureActivity::class.java)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
+        }
+        
+        // Help button
+        findViewById<Button>(R.id.btn_help).setOnClickListener {
+            val intent = Intent(this, HelpActivity::class.java)
+            startActivity(intent)
+            overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
         
         // Setup language buttons
         findViewById<Button>(R.id.btn_english).setOnClickListener {
             LanguageUtils.setLanguage(this, LanguageUtils.Language.ENGLISH)
+            updateUIAfterLanguageChange()
         }
         
         findViewById<Button>(R.id.btn_russian).setOnClickListener {
             LanguageUtils.setLanguage(this, LanguageUtils.Language.RUSSIAN)
+            updateUIAfterLanguageChange()
         }
         
         findViewById<Button>(R.id.btn_chinese).setOnClickListener {
             LanguageUtils.setLanguage(this, LanguageUtils.Language.CHINESE)
+            updateUIAfterLanguageChange()
         }
         
-        // Highlight current language button
-        highlightCurrentLanguage()
+        // Update all UI elements with proper labels
+        updateUIAfterLanguageChange()
     }
     
     private fun highlightCurrentLanguage() {
@@ -71,6 +86,25 @@ class MainActivity : BaseActivity() {
         }
     }
     
+    /**
+     * Update UI after language change
+     */
+    private fun updateUIAfterLanguageChange() {
+        // Update all text labels
+        findViewById<Button>(R.id.btn_start_documenting).text = getString(R.string.menu_start)
+        findViewById<Button>(R.id.btn_file_structure).text = getString(R.string.file_structure)
+        findViewById<Button>(R.id.btn_help).text = getString(R.string.menu_help)
+        findViewById<TextView>(R.id.textView_language).text = getString(R.string.menu_language)
+        
+        // Update language buttons
+        findViewById<Button>(R.id.btn_english).text = getString(R.string.language_english)
+        findViewById<Button>(R.id.btn_russian).text = getString(R.string.language_russian)
+        findViewById<Button>(R.id.btn_chinese).text = getString(R.string.language_chinese)
+        
+        // Highlight current language
+        highlightCurrentLanguage()
+    }
+    
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.main_menu, menu)
         return true
@@ -82,16 +116,16 @@ class MainActivity : BaseActivity() {
                 showLanguageDialog()
                 true
             }
-            R.id.menu_gallery -> {
-                startActivity(Intent(this, GalleryBrowserActivity::class.java))
-                true
-            }
             R.id.menu_file_structure -> {
-                startActivity(Intent(this, FileStructureActivity::class.java))
+                val intent = Intent(this, FileStructureActivity::class.java)
+                startActivity(intent)
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 true
             }
             R.id.menu_help -> {
-                startActivity(Intent(this, HelpActivity::class.java))
+                val intent = Intent(this, HelpActivity::class.java)
+                startActivity(intent)
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -115,7 +149,7 @@ class MainActivity : BaseActivity() {
                     else -> LanguageUtils.Language.ENGLISH
                 }
                 LanguageUtils.setLanguage(this, language)
-                highlightCurrentLanguage()
+                updateUIAfterLanguageChange()
             }
             .show()
     }
@@ -145,5 +179,10 @@ class MainActivity : BaseActivity() {
                     .show()
             }
         }
+    }
+    
+    override fun finish() {
+        super.finish()
+        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right)
     }
 }

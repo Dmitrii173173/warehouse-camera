@@ -2,17 +2,16 @@ package com.warehouse.camera.ui
 
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
-import android.animation.ValueAnimator
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
-import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.RadioButton
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.warehouse.camera.MainActivity
@@ -21,17 +20,18 @@ import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.ui.base.BaseActivity
 import com.warehouse.camera.utils.FileUtils
-import com.warehouse.camera.utils.LanguageUtils
 
-class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
+class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
 
+    private lateinit var toolbar: Toolbar
     private lateinit var recyclerView: RecyclerView
     private lateinit var completeButton: Button
     
-    private lateinit var category1Button: ImageButton
-    private lateinit var category2Button: ImageButton
-    private lateinit var category3Button: ImageButton
+    private lateinit var category1Button: RadioButton
+    private lateinit var category2Button: RadioButton
+    private lateinit var category3Button: RadioButton
     
     private lateinit var category1Indicator: ImageView
     private lateinit var category2Indicator: ImageView
@@ -65,8 +65,14 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
                 val item = items[currentItemPosition]
                 if (isBoxPhoto) {
                     item.boxPhotoPath = updatedItem.boxPhotoPath
+                    item.boxPhotoMarkedPath = updatedItem.boxPhotoMarkedPath
+                    item.boxPhotoPaths = updatedItem.boxPhotoPaths
+                    item.boxPhotoMarkedPaths = updatedItem.boxPhotoMarkedPaths
                 } else {
                     item.productPhotoPath = updatedItem.productPhotoPath
+                    item.productPhotoMarkedPath = updatedItem.productPhotoMarkedPath
+                    item.productPhotoPaths = updatedItem.productPhotoPaths
+                    item.productPhotoMarkedPaths = updatedItem.productPhotoMarkedPaths
                 }
                 // Set the selected category
                 item.defectCategory = selectedCategory
@@ -101,9 +107,6 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        // Apply saved language
-        LanguageUtils.applyLanguage(this)
-        
         setContentView(R.layout.activity_item_list)
         
         // Get data from intent
@@ -136,8 +139,12 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
         } ?: throw IllegalStateException("Items must be provided")
         
         // Initialize views
+        toolbar = findViewById(R.id.toolbar)
         recyclerView = findViewById(R.id.recyclerView_items)
         completeButton = findViewById(R.id.button_complete)
+        
+        // Setup toolbar with back button
+        setupToolbar(toolbar)
         
         // Initialize category buttons
         category1Button = findViewById(R.id.category_1_button)
@@ -171,7 +178,7 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
                 intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
                 // Pass the manufacturerInfo so the flow can continue
                 intent.putExtra("manufacturerInfo", manufacturerInfo)
-                startActivity(intent)
+                startActivityWithAnimation(intent)
                 finish()
             } else {
                 Toast.makeText(this, R.string.complete_all_items, Toast.LENGTH_SHORT).show()
@@ -187,29 +194,24 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
         category2Indicator.visibility = View.INVISIBLE
         category3Indicator.visibility = View.INVISIBLE
         
-        // Reset all button sizes
-        category1Button.scaleX = 1.0f
-        category1Button.scaleY = 1.0f
-        category2Button.scaleX = 1.0f
-        category2Button.scaleY = 1.0f
-        category3Button.scaleX = 1.0f
-        category3Button.scaleY = 1.0f
+        // Reset all button animations
+        resetButtonAnimations()
         
         // Apply selection based on category
         when (category) {
             1 -> {
+                category1Button.isChecked = true
                 category1Indicator.visibility = View.VISIBLE
-                // Animate the button size
                 animateButtonSelection(category1Button)
             }
             2 -> {
+                category2Button.isChecked = true
                 category2Indicator.visibility = View.VISIBLE
-                // Animate the button size
                 animateButtonSelection(category2Button)
             }
             3 -> {
+                category3Button.isChecked = true
                 category3Indicator.visibility = View.VISIBLE
-                // Animate the button size
                 animateButtonSelection(category3Button)
             }
         }
@@ -221,9 +223,18 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
         }
     }
     
-    private fun animateButtonSelection(button: ImageButton) {
-        val scaleX = ObjectAnimator.ofFloat(button, "scaleX", 1.0f, 1.1f)
-        val scaleY = ObjectAnimator.ofFloat(button, "scaleY", 1.0f, 1.1f)
+    private fun resetButtonAnimations() {
+        category1Button.scaleX = 1.0f
+        category1Button.scaleY = 1.0f
+        category2Button.scaleX = 1.0f
+        category2Button.scaleY = 1.0f
+        category3Button.scaleX = 1.0f
+        category3Button.scaleY = 1.0f
+    }
+    
+    private fun animateButtonSelection(button: View) {
+        val scaleX = ObjectAnimator.ofFloat(button, "scaleX", 1.0f, 1.1f, 1.0f)
+        val scaleY = ObjectAnimator.ofFloat(button, "scaleY", 1.0f, 1.1f, 1.0f)
         
         val animatorSet = AnimatorSet()
         animatorSet.playTogether(scaleX, scaleY)
@@ -250,6 +261,7 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
         intent.putExtra("isBoxPhoto", true)
         intent.putExtra("defectCategory", selectedCategory)
         takePictureResult.launch(intent)
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
     
     override fun onTakeProductPhoto(position: Int) {
@@ -271,6 +283,7 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
         intent.putExtra("isBoxPhoto", false)
         intent.putExtra("defectCategory", selectedCategory)
         takePictureResult.launch(intent)
+        overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
     }
     
     override fun onSaveItem(position: Int) {
@@ -309,7 +322,7 @@ class ItemListActivity : AppCompatActivity(), ItemAdapter.ItemActionsListener {
             intent.putExtra("articleInfo", articleInfo)
             intent.putExtra("defectDetails", defectDetails)
             intent.putExtra("itemData", item)
-            startActivity(intent)
+            startActivityWithAnimation(intent)
         } else {
             Toast.makeText(this, R.string.no_photo_available, Toast.LENGTH_SHORT).show()
         }

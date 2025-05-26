@@ -1,15 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="colorPrimary">#3F51B5</color>
-    <color name="colorPrimaryDark">#303F9F</color>
-    <color name="colorPrimaryLight">#7986CB</color>
-    <color name="colorAccent">#FF4081</color>
+    <!-- Apple-style color palette -->
+    <color name="colorPrimary">#007AFF</color>
+    <color name="colorPrimaryDark">#0062CC</color>
+    <color name="colorPrimaryLight">#5AC8FA</color>
+    <color name="colorAccent">#FF3B30</color>
+    <color name="colorBackground">#F2F2F7</color>
+    <color name="colorSurface">#FFFFFF</color>
+    <color name="colorTextPrimary">#000000</color>
+    <color name="colorTextSecondary">#8E8E93</color>
+    <color name="colorBorder">#DCDCDC</color>
+    
+    <!-- Original colors for backward compatibility -->
     <color name="white">#FFFFFF</color>
     <color name="black">#000000</color>
-    <color name="gray">#CCCCCC</color>
-    <color name="light_gray">#EEEEEE</color>
-    <color name="dark_gray">#666666</color>
-    <color name="green">#4CAF50</color>
-    <color name="status_pending">#FFA000</color>
+    <color name="gray">#8E8E93</color>
+    <color name="light_gray">#F2F2F7</color>
+    <color name="dark_gray">#3A3A3C</color>
+    <color name="green">#34C759</color>
+    <color name="yellow">#FFCC00</color>
+    <color name="red">#FF3B30</color>
+    <color name="status_pending">#FF9500</color>
     <color name="ic_launcher_background">#FFFFFF</color>
 </resources>

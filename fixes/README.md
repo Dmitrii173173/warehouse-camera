@@ -243,6 +243,171 @@ private fun saveReceptions(receptions: List<ProductReception>): Boolean {
 }
 ```
 
+## Проблема 3: Фикс ориентации фотографий
+
+### Шаги для реализации:
+
+1. Добавьте метод `fixPhotoOrientation` в класс `ImageUtils`:
+
+```kotlin
+/**
+ * Исправляет ориентацию изображения на основе данных EXIF
+ * @param photoPath Путь к файлу изображения
+ * @return Исправленный Bitmap или null в случае ошибки
+ */
+fun fixPhotoOrientation(photoPath: String): Bitmap? {
+    try {
+        // Получаем исходный Bitmap
+        val options = BitmapFactory.Options().apply {
+            inJustDecodeBounds = false
+        }
+        var bitmap = BitmapFactory.decodeFile(photoPath, options) ?: return null
+        
+        // Получаем ориентацию из EXIF
+        val exif = ExifInterface(photoPath)
+        val orientation = exif.getAttributeInt(
+            ExifInterface.TAG_ORIENTATION,
+            ExifInterface.ORIENTATION_UNDEFINED
+        )
+        
+        Log.d("ImageUtils", "Original EXIF orientation: $orientation")
+        
+        // Создаем матрицу для поворота
+        val matrix = Matrix()
+        
+        // Применяем поворот в зависимости от ориентации
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(90f)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(180f)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(270f)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.preScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.preScale(-1f, 1f)
+                matrix.postRotate(90f)
+            }
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.preScale(-1f, 1f)
+                matrix.postRotate(270f)
+            }
+            else -> return bitmap // Поворот не требуется
+        }
+        
+        // Применяем трансформацию и получаем новый Bitmap
+        val rotatedBitmap = Bitmap.createBitmap(
+            bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true
+        )
+        
+        // Очищаем исходный Bitmap, если он отличается от повернутого
+        if (rotatedBitmap != bitmap) {
+            bitmap.recycle()
+            bitmap = rotatedBitmap
+        }
+        
+        // Сохраняем повернутый Bitmap обратно в файл
+        FileOutputStream(photoPath).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, out)
+        }
+        
+        // Очищаем информацию об ориентации в EXIF
+        exif.setAttribute(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL.toString())
+        exif.saveAttributes()
+        
+        Log.d("ImageUtils", "Photo orientation fixed: $photoPath")
+        return bitmap
+        
+    } catch (e: IOException) {
+        Log.e("ImageUtils", "Error fixing photo orientation", e)
+        return null
+    }
+}
+```
+
+2. Добавьте необходимые импорты в `ImageUtils.kt`:
+
+```kotlin
+import android.graphics.Matrix
+import android.media.ExifInterface
+import android.util.Log
+import java.io.IOException
+```
+
+3. Обновите метод фотосъемки в `CameraActivity.kt` для использования нового метода исправления ориентации:
+
+```kotlin
+// Замените этот блок кода:
+// Читаем битмап из файла для проверки
+val bitmap = BitmapFactory.decodeFile(outputFile!!.absolutePath)
+if (bitmap == null) {
+    throw IOException("Failed to decode bitmap from file")
+}
+
+// Сохраняем битмап обратно в файл для гарантии правильной записи
+FileUtils.saveBitmapToFile(bitmap, outputFile!!)
+
+// На этот новый код:
+// Исправляем ориентацию и читаем исправленный битмап
+val bitmap = ImageUtils.fixPhotoOrientation(outputFile!!.absolutePath)
+if (bitmap == null) {
+    throw IOException("Failed to decode bitmap from file")
+}
+
+// Битмап уже сохранен методом fixPhotoOrientation
+// FileUtils.saveBitmapToFile(bitmap, outputFile!!)
+```
+
+## Проблема 4: Добавление возможности просмотра фотографий из файлового менеджера
+
+### Шаги для реализации:
+
+1. Обновите метод `showFileDetails` в `FileStructureActivity.kt` для открытия фотографий в ImageViewerActivity:
+
+```kotlin
+else if (isImageFile(file)) {
+    // Открываем просмотрщик изображений
+    val intent = Intent(this, ImageViewerActivity::class.java)
+    val itemType = when {
+        file.name.startsWith("damage-") -> GalleryItem.ItemType.BOX_PHOTO
+        file.name.startsWith("barcode-") -> GalleryItem.ItemType.PRODUCT_PHOTO
+        else -> GalleryItem.ItemType.UNKNOWN
+    }
+    
+    // Извлекаем код артикула из имени файла или используем пустую строку
+    val articleCode = try {
+        val fileName = file.name
+        val prefixEnd = fileName.indexOf('-') + 1
+        val suffixStart = fileName.lastIndexOf('.')
+        if (prefixEnd > 0 && suffixStart > prefixEnd) {
+            fileName.substring(prefixEnd, suffixStart).replace("_marked", "")
+        } else {
+            ""
+        }
+    } catch (e: Exception) {
+        ""
+    }
+    
+    val galleryItem = GalleryItem(
+        file = file,
+        name = file.name,
+        date = Date(file.lastModified()),
+        type = itemType,
+        articleCode = articleCode,
+        path = file.absolutePath
+    )
+    
+    intent.putExtra("galleryItem", galleryItem)
+    startActivity(intent)
+}
+```
+
+2. Добавьте необходимые импорты в `FileStructureActivity.kt`:
+
+```kotlin
+import android.content.Intent
+import com.warehouse.camera.model.GalleryItem
+import java.util.Date
+```
+
 ## Дополнительные рекомендации:
 
 1. Убедитесь, что в методе `onFileDeleted` в `FileStructureActivity.kt` вызов `updateDirectoryView()` происходит после всех операций удаления, чтобы обновить UI.

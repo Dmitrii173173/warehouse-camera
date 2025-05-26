@@ -4,103 +4,173 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/colorBackground"
     tools:context=".MainActivity">
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginTop="80dp"
+        android:layout_width="100dp"
+        android:layout_height="100dp"
+        android:layout_marginTop="32dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/ic_camera"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/colorPrimary" />
 
     <TextView
         android:id="@+id/textView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:text="@string/app_name"
-        android:textSize="28sp"
-        android:textStyle="bold"
+        android:textColor="@color/colorTextPrimary"
+        android:textSize="24sp"
+        android:fontFamily="sans-serif-light"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/imageView" />
-
-    <Button
-        android:id="@+id/btn_start_documenting"
-        android:layout_width="0dp"
+        
+    <TextView
+        android:id="@+id/textViewCompanyName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="60dp"
-        android:layout_marginEnd="32dp"
-        android:padding="16dp"
-        android:text="@string/menu_start"
-        android:textSize="18sp"
+        android:layout_marginTop="4dp"
+        android:text="亚州汽车零部件（东莞）有限公司"
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="14sp"
+        android:fontFamily="sans-serif-light"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView" />
 
-    <Button
-        android:id="@+id/btn_gallery"
-        android:layout_width="0dp"
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_view"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="32dp"
-        android:padding="16dp"
-        android:text="@string/menu_gallery"
-        android:textSize="18sp"
+        android:layout_marginStart="24dp"
+        android:layout_marginTop="24dp"
+        android:layout_marginEnd="24dp"
+        app:cardBackgroundColor="@color/colorSurface"
+        app:cardCornerRadius="12dp"
+        app:cardElevation="0dp"
+        app:strokeColor="@color/colorBorder"
+        app:strokeWidth="1dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_start_documenting" />
-        
+        app:layout_constraintTop_toBottomOf="@+id/textViewCompanyName">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Button
+                android:id="@+id/btn_start_documenting"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="8dp"
+                android:background="@drawable/bg_button_primary"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:stateListAnimator="@animator/button_state_list_animator"
+                android:text="@string/menu_start"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+                
+            <Button
+                android:id="@+id/btn_file_structure"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_button_primary"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:stateListAnimator="@animator/button_state_list_animator"
+                android:text="@string/file_structure"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+                
+            <Button
+                android:id="@+id/btn_help"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginBottom="8dp"
+                android:background="@drawable/bg_button_primary"
+                android:paddingTop="10dp"
+                android:paddingBottom="10dp"
+                android:stateListAnimator="@animator/button_state_list_animator"
+                android:text="@string/menu_help"
+                android:textColor="@color/white"
+                android:textSize="16sp" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
     <TextView
         android:id="@+id/textView_language"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
+        android:layout_marginTop="16dp"
         android:text="@string/menu_language"
-        android:textSize="16sp"
+        android:textColor="@color/colorTextSecondary"
+        android:textSize="14sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/btn_gallery" />
+        app:layout_constraintTop_toBottomOf="@+id/card_view" />
 
     <LinearLayout
         android:id="@+id/languageButtonsLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="32dp"
+        android:layout_marginStart="24dp"
         android:layout_marginTop="8dp"
-        android:layout_marginEnd="32dp"
-        android:orientation="horizontal"
+        android:layout_marginEnd="24dp"
         android:gravity="center"
+        android:orientation="horizontal"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/textView_language">
 
         <Button
             android:id="@+id/btn_english"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:text="EN" />
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_button_primary"
+            android:stateListAnimator="@animator/button_state_list_animator"
+            android:drawableTop="@drawable/flag_uk"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/btn_russian"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:text="RU" />
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_button_primary"
+            android:stateListAnimator="@animator/button_state_list_animator"
+            android:drawableTop="@drawable/flag_russia"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/btn_chinese"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_margin="4dp"
-            android:text="中文" />
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_margin="6dp"
+            android:background="@drawable/bg_button_primary"
+            android:stateListAnimator="@animator/button_state_list_animator"
+            android:drawableTop="@drawable/flag_china"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:textColor="@color/white" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

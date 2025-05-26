@@ -11,20 +11,22 @@ import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
+import com.warehouse.camera.ui.base.BaseActivity
 import com.warehouse.camera.utils.FileUtils
 import com.warehouse.camera.utils.ImageUtils
 import com.warehouse.camera.utils.LanguageUtils
@@ -34,9 +36,9 @@ import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-class CameraActivity : AppCompatActivity() {
+class CameraActivity : BaseActivity() {
     private lateinit var viewFinder: PreviewView
-    private lateinit var captureButton: Button
+    private lateinit var captureButton: FloatingActionButton
     private lateinit var previewContainer: FrameLayout
     private lateinit var imagePreview: ImageView
     private lateinit var retakeButton: Button
@@ -44,8 +46,10 @@ class CameraActivity : AppCompatActivity() {
     private lateinit var nextItemButton: Button
     private lateinit var addMoreButton: Button
     private lateinit var photoCountText: TextView
+    private lateinit var backButton: ImageButton
+    private lateinit var backPreviewButton: ImageButton
     
-    // Radio buttons are still in the layout but hidden
+    // Radio buttons for the color circles
     private lateinit var radioGroupCircles: RadioGroup
     private lateinit var radioButtonGreen: RadioButton
     private lateinit var radioButtonYellow: RadioButton
@@ -111,11 +115,13 @@ class CameraActivity : AppCompatActivity() {
         nextItemButton = findViewById(R.id.button_next_item)
         addMoreButton = findViewById(R.id.button_add_more_photos)
         photoCountText = findViewById(R.id.photo_count_text)
+        backButton = findViewById(R.id.button_back)
+        backPreviewButton = findViewById(R.id.button_back_preview)
         
         // Update photo count display
         updatePhotoCountDisplay()
         
-        // The radio buttons are now hidden but we still keep references to them
+        // Set up the radio buttons for color selection
         radioGroupCircles = findViewById(R.id.radioGroup_circles)
         radioButtonGreen = findViewById(R.id.radioButton_green)
         radioButtonYellow = findViewById(R.id.radioButton_yellow)
@@ -124,20 +130,39 @@ class CameraActivity : AppCompatActivity() {
         // Set initial values for circle color and text based on defect category
         when (defectCategory) {
             1 -> {
-                selectedCircleColor = Color.parseColor("#4CAF50")  // Green
+                selectedCircleColor = Color.parseColor("#34C759")  // Green
                 selectedCircleText = "1"
                 radioButtonGreen.isChecked = true
             }
             2 -> {
-                selectedCircleColor = Color.parseColor("#FFC107")  // Yellow
+                selectedCircleColor = Color.parseColor("#FFCC00")  // Yellow
                 selectedCircleText = "2"
                 radioButtonYellow.isChecked = true
             }
             3 -> {
-                selectedCircleColor = Color.parseColor("#F44336")  // Red
+                selectedCircleColor = Color.parseColor("#FF3B30")  // Red
                 selectedCircleText = "3"
                 radioButtonRed.isChecked = true
             }
+        }
+        
+        // Set up radio button listeners
+        radioButtonGreen.setOnClickListener {
+            selectedCircleColor = Color.parseColor("#34C759")
+            selectedCircleText = "1"
+            defectCategory = 1
+        }
+        
+        radioButtonYellow.setOnClickListener {
+            selectedCircleColor = Color.parseColor("#FFCC00")
+            selectedCircleText = "2"
+            defectCategory = 2
+        }
+        
+        radioButtonRed.setOnClickListener {
+            selectedCircleColor = Color.parseColor("#FF3B30")
+            selectedCircleText = "3"
+            defectCategory = 3
         }
         
         // Check permissions
@@ -153,6 +178,8 @@ class CameraActivity : AppCompatActivity() {
         usePhotoButton.setOnClickListener { usePhoto() }
         nextItemButton.setOnClickListener { saveAndMoveToNextItem() }
         addMoreButton.setOnClickListener { addMorePhotos() }
+        backButton.setOnClickListener { onBackPressed() }
+        backPreviewButton.setOnClickListener { retakePhoto() }
         
         cameraExecutor = Executors.newSingleThreadExecutor()
     }
@@ -280,14 +307,14 @@ class CameraActivity : AppCompatActivity() {
                             
                             Log.d(TAG, "Photo captured successfully: ${outputFile?.absolutePath}")
                             
-                            // Read the bitmap from file to verify it's valid
-                            val bitmap = BitmapFactory.decodeFile(outputFile!!.absolutePath)
+                            // Fix orientation and read the corrected bitmap
+                            val bitmap = ImageUtils.fixPhotoOrientation(outputFile!!.absolutePath)
                             if (bitmap == null) {
                                 throw IOException("Failed to decode bitmap from file")
                             }
                             
-                            // Save the bitmap back to the file to ensure it's properly written
-                            FileUtils.saveBitmapToFile(bitmap, outputFile!!)
+                            // The bitmap is already saved by fixPhotoOrientation method
+                            // FileUtils.saveBitmapToFile(bitmap, outputFile!!)
                             
                             // Create a marked version with the defect category indicator
                             val markedBitmap = ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)

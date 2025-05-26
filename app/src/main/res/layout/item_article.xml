@@ -1,12 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.cardview.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
-    app:cardCornerRadius="8dp"
-    app:cardElevation="4dp">
+    android:layout_marginHorizontal="4dp"
+    android:layout_marginVertical="8dp"
+    app:cardBackgroundColor="@color/colorSurface"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/colorBorder"
+    app:strokeWidth="1dp">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
@@ -17,8 +21,9 @@
             android:id="@+id/textView_article_code"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/colorTextPrimary"
             android:textSize="18sp"
-            android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="666888AA-1" />
@@ -28,82 +33,100 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
-            android:background="@drawable/bg_status"
-            android:padding="4dp"
+            android:background="@drawable/bg_status_pill"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
             android:textColor="@android:color/white"
+            android:textSize="12sp"
             app:layout_constraintBottom_toBottomOf="@+id/textView_article_code"
             app:layout_constraintStart_toEndOf="@+id/textView_article_code"
             app:layout_constraintTop_toTopOf="@+id/textView_article_code"
             tools:text="Completed" />
 
-        <Button
-            android:id="@+id/button_photo_box"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:id="@+id/photo_buttons_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/photo_box"
-            app:layout_constraintEnd_toStartOf="@+id/button_photo_product"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView_article_code" />
-
-        <Button
-            android:id="@+id/button_photo_product"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:text="@string/photo_product"
+            android:orientation="horizontal"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/button_photo_box"
-            app:layout_constraintTop_toTopOf="@+id/button_photo_box" />
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView_article_code">
+
+            <Button
+                android:id="@+id/button_photo_box"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_primary"
+                android:textColor="@color/white"
+                android:text="@string/photo_box" />
+
+            <Button
+                android:id="@+id/button_photo_product"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_primary"
+                android:textColor="@color/white"
+                android:text="@string/photo_product" />
+        </LinearLayout>
 
         <TextView
             android:id="@+id/textView_box_photo_status"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="@color/colorTextSecondary"
             android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="@+id/button_photo_box"
-            app:layout_constraintTop_toBottomOf="@+id/button_photo_box"
+            app:layout_constraintEnd_toStartOf="@+id/textView_product_photo_status"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/photo_buttons_container"
             tools:text="Box photo: Not taken" />
 
         <TextView
             android:id="@+id/textView_product_photo_status"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:textSize="12sp"
-            app:layout_constraintStart_toStartOf="@+id/button_photo_product"
-            app:layout_constraintTop_toBottomOf="@+id/button_photo_product"
-            tools:text="Product photo: Not taken" />
-
-        <Button
-            android:id="@+id/button_save"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:layout_marginEnd="8dp"
-            android:text="@string/save"
-            app:layout_constraintEnd_toStartOf="@+id/button_view_gallery"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/textView_box_photo_status" />
-
-        <Button
-            android:id="@+id/button_view_gallery"
-            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="8dp"
-            android:text="@string/view_in_gallery"
+            android:textColor="@color/colorTextSecondary"
+            android:textSize="12sp"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.5"
-            app:layout_constraintStart_toEndOf="@+id/button_save"
-            app:layout_constraintTop_toTopOf="@+id/button_save" />
+            app:layout_constraintStart_toEndOf="@+id/textView_box_photo_status"
+            app:layout_constraintTop_toTopOf="@+id/textView_box_photo_status"
+            tools:text="Product photo: Not taken" />
+
+        <LinearLayout
+            android:id="@+id/action_buttons_container"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:orientation="horizontal"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView_box_photo_status">
+
+            <Button
+                android:id="@+id/button_save"
+                style="@style/Widget.App.Button"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="@string/save" />
+
+            <Button
+                android:id="@+id/button_view_gallery"
+                style="@style/Widget.App.Button.Secondary"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/view_in_gallery" />
+        </LinearLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
-</androidx.cardview.widget.CardView>
+</com.google.android.material.card.MaterialCardView>
