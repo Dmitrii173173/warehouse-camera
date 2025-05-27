@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">仓库相机</string>
+    <string name="path">路径</string>
+    <!-- Flash strings moved to flash_strings.xml and strings_camera.xml -->
     
     <!-- Main Menu -->
     <string name="menu_start">开始记录</string>
@@ -47,6 +49,13 @@
     <string name="article_title">物品信息</string>
     <string name="article_code_label">物品代码</string>
     <string name="article_code_hint">输入物品代码（例如666888AA）</string>
+    <string name="scan_barcode">扫描条形码/QR</string>
+    <string name="barcode_scanned_successfully">条形码扫描成功</string>
+    <string name="file_structure">文件结构</string>
+    <string name="folder_info">%1$d 项 | %2$s</string>
+    <string name="file_info">%1$s | %2$s</string>
+    <string name="scanner_frame">扫描框架</string>
+    <string name="scan_barcode_instruction">将条形码/QR放在框内</string>
     <string name="quantity_label">数量</string>
     <string name="quantity_hint">项目数量（1-10）</string>
     
@@ -98,11 +107,15 @@
     <!-- Camera Screen -->
     <string name="camera_title">拍照</string>
     <string name="normal_photo_mode">普通照片</string>
+    <string name="error_photo_processing">照片处理错误</string>
+    <string name="processing_previous_photo">正在处理上一张照片...</string>
+    <string name="photo_captured_processing">📸 照片已拍摄！正在处理...</string>
+    <string name="photo_ready">✅ 照片已就绪！</string>
     <string name="capture">拍摄</string>
     <string name="retake">重拍</string>
-    <string name="use_photo">使用这张照片</string>
+    <string name="use_photo">完成</string>
     <string name="next_item">下一个项目</string>
-    <string name="add_more_photos">添加更多照片</string>
+    <string name="add_more_photos">添加照片</string>
     <string name="photo_count">照片: %1$d</string>
     <string name="back">返回</string>
     <string name="preview">预览</string>

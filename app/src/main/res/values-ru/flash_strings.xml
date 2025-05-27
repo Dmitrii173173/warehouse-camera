@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flash_on">Фонарик включен</string>
+    <string name="flash_off">Фонарик выключен</string>
+    <string name="error_flash_not_available">Фонарик недоступен на этом устройстве</string>
+</resources>

@@ -15,6 +15,39 @@
             android:id="@+id/viewFinder"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
+            
+        <!-- Photo processing indicator -->
+        <FrameLayout
+            android:id="@+id/processing_indicator"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#80000000"
+            android:visibility="gone">
+            
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:background="#B3000000"
+                android:gravity="center">
+                
+                <ProgressBar
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:indeterminateTint="@color/white" />
+                    
+                <TextView
+                    android:id="@+id/processing_text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:text="@string/photo_captured_processing"
+                    android:textColor="@color/white"
+                    android:textSize="16sp" />
+            </LinearLayout>
+        </FrameLayout>
     </FrameLayout>
 
     <!-- Top toolbar with back button -->
@@ -62,16 +95,24 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageButton
-            android:id="@+id/button_flash"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
+        <FrameLayout
+            android:id="@+id/flash_button_container"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
             android:layout_marginBottom="16dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="@string/toggle_flashlight"
-            android:src="@drawable/ic_flash_off"
-            android:tint="@color/white"
-            android:padding="8dp" />
+            android:background="@drawable/bg_circle_button"
+            android:elevation="4dp">
+
+            <ImageButton
+                android:id="@+id/button_flash"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/toggle_flashlight"
+                android:src="@drawable/ic_flash_off"
+                android:tint="@color/white"
+                android:padding="12dp" />
+        </FrameLayout>
     </LinearLayout>
 
     <!-- Color selection circles and normal photo toggle -->
@@ -204,62 +245,61 @@
                 android:textSize="16sp" />
         </LinearLayout>
 
+        <!-- Add more photos button (moved to top-right) -->
+        <Button
+            android:id="@+id/button_add_more_photos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|end"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="16dp"
+            android:background="@drawable/bg_button_primary"
+            android:paddingTop="10dp"
+            android:paddingBottom="10dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:stateListAnimator="@animator/button_state_list_animator"
+            android:text="@string/add_more_photos"
+            android:textColor="@color/white"
+            android:textSize="12sp"
+            android:visibility="gone" />
+            
         <!-- Bottom action buttons -->
         <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
         android:background="#80000000"
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:padding="16dp"
             android:layout_marginBottom="0dp">
 
             <Button
-                android:id="@+id/button_add_more_photos"
-                android:layout_width="match_parent"
+                android:id="@+id/button_retake"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:background="@drawable/bg_button_primary"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:background="@drawable/bg_button_red"
                 android:paddingTop="14dp"
                 android:paddingBottom="14dp"
                 android:stateListAnimator="@animator/button_state_list_animator"
-                android:text="+ ДОБАВИТЬ ЕЩЁ ФОТО +"
-                android:textColor="@color/white"
+                android:text="@string/retake"
                 android:textSize="14sp"
-                android:visibility="gone" />
+                android:textColor="@color/white" />
 
-            <LinearLayout
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/button_use_photo"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal">
-
-                <Button
-                    android:id="@+id/button_retake"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_button_red"
-                    android:paddingTop="14dp"
-                    android:paddingBottom="14dp"
-                    android:stateListAnimator="@animator/button_state_list_animator"
-                    android:text="ПЕРЕСНЯТЬ"
-                    android:textSize="14sp"
-                    android:textColor="@color/white" />
-
-                <Button
-                    android:id="@+id/button_use_photo"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:background="@drawable/bg_button_green"
-                    android:paddingTop="14dp"
-                    android:paddingBottom="14dp"
-                    android:stateListAnimator="@animator/button_state_list_animator"
-                    android:text="ГОТОВО"
-                    android:textSize="14sp"
-                    android:textColor="@color/white" />
-            </LinearLayout>
+                android:layout_weight="1"
+                android:background="#34C759"
+                android:paddingTop="14dp"
+                android:paddingBottom="14dp"
+                android:stateListAnimator="@animator/button_state_list_animator"
+                android:text="@string/use_photo"
+                android:textSize="14sp"
+                android:textColor="@color/white" />
         </LinearLayout>
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

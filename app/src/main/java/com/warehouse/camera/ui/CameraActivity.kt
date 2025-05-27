@@ -39,6 +39,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import kotlinx.coroutines.*
 
 class CameraActivity : BaseActivity() {
     private lateinit var viewFinder: PreviewView
@@ -54,6 +55,8 @@ class CameraActivity : BaseActivity() {
     private lateinit var backPreviewButton: ImageButton
     private lateinit var normalPhotoSwitch: Switch
     private lateinit var flashButton: ImageButton
+    private lateinit var processingIndicator: FrameLayout
+    private lateinit var processingText: TextView
     
     // Radio buttons for the color circles
     private lateinit var radioGroupCircles: RadioGroup
@@ -63,6 +66,9 @@ class CameraActivity : BaseActivity() {
     
     private var imageCapture: ImageCapture? = null
     private lateinit var cameraExecutor: ExecutorService
+    
+    // Coroutine scope for async operations
+    private val processingScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     
     private var outputFile: File? = null
     private var outputUri: Uri? = null
@@ -76,6 +82,10 @@ class CameraActivity : BaseActivity() {
     private var isBoxPhoto: Boolean = false
     private var defectCategory: Int = 1 // Default category
     private var currentPhotoIndex: Int = 0 // Track the current photo index
+    
+    // Variables to store temporary photo data during processing
+    private var tempPhotoPath: String? = null
+    private var isProcessingPhoto = false
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -125,6 +135,8 @@ class CameraActivity : BaseActivity() {
         backPreviewButton = findViewById(R.id.button_back_preview)
         normalPhotoSwitch = findViewById(R.id.switch_normal_photo)
         flashButton = findViewById(R.id.button_flash)
+        processingIndicator = findViewById(R.id.processing_indicator)
+        processingText = findViewById(R.id.processing_text)
         
         // Update photo count display
         updatePhotoCountDisplay()
@@ -230,9 +242,10 @@ class CameraActivity : BaseActivity() {
                     it.setSurfaceProvider(viewFinder.surfaceProvider)
                 }
             
-            // Image capture
+            // Image capture with optimized settings for speed
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY)
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY) // Changed for speed
+                .setJpegQuality(85) // Slightly reduce quality for faster processing
                 .build()
             
             // Select back camera as a default
@@ -255,7 +268,12 @@ class CameraActivity : BaseActivity() {
     }
     
     private fun takePhoto() {
-        // Get a stable reference of the modifiable image capture use case
+        // Prevent multiple simultaneous photo captures
+        if (isProcessingPhoto) {
+            Toast.makeText(this, R.string.processing_previous_photo, Toast.LENGTH_SHORT).show()
+            return
+        }
+        
         val imageCapture = imageCapture ?: return
         
         try {
@@ -265,8 +283,8 @@ class CameraActivity : BaseActivity() {
             // Determine if we need to create a new file with index
             val needsIndex = currentPhotoIndex > 0
             
-            // Create output file
-            outputFile = if (needsIndex) {
+            // Create temporary output file (quick operation)
+            val tempFile = if (needsIndex) {
                 FileUtils.createImageFile(
                     this,
                     manufacturerInfo,
@@ -285,21 +303,26 @@ class CameraActivity : BaseActivity() {
                 )
             }
             
-            if (outputFile == null) {
+            if (tempFile == null) {
                 Toast.makeText(this, R.string.error_create_directory, Toast.LENGTH_SHORT).show()
                 return
             }
             
-            Log.d(TAG, "Saving photo to: ${outputFile?.absolutePath}")
+            Log.d(TAG, "Taking photo to: ${tempFile.absolutePath}")
             
             // Create output options object
-            val outputOptions = ImageCapture.OutputFileOptions.Builder(outputFile!!).build()
+            val outputOptions = ImageCapture.OutputFileOptions.Builder(tempFile).build()
             
-            // Disable capture button during photo capture
+            // Mark as processing and disable capture button
+            isProcessingPhoto = true
             captureButton.isEnabled = false
             
-            // Show a toast indicating photo is being taken
-            Toast.makeText(this, "Taking photo...", Toast.LENGTH_SHORT).show()
+            // Show immediate feedback
+            showCaptureAnimation()
+            
+            // Show processing indicator
+            processingIndicator.visibility = View.VISIBLE
+            processingText.text = getString(R.string.photo_captured_processing)
             
             // Set up image capture listener
             imageCapture.takePicture(
@@ -307,103 +330,170 @@ class CameraActivity : BaseActivity() {
                 ContextCompat.getMainExecutor(this),
                 object : ImageCapture.OnImageSavedCallback {
                     override fun onError(exc: ImageCaptureException) {
-                        // Re-enable capture button
-                        captureButton.isEnabled = true
-                        
-                        Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
-                        Toast.makeText(this@CameraActivity, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
-                        
-                        // Clean up any partially written file
-                        outputFile?.delete()
-                        outputFile = null
-                        outputUri = null
+                        runOnUiThread {
+                            // Hide processing indicator
+                            processingIndicator.visibility = View.GONE
+                            
+                            // Re-enable capture button
+                            isProcessingPhoto = false
+                            captureButton.isEnabled = true
+                            
+                            Log.e(TAG, "Photo capture failed: ${exc.message}", exc)
+                            Toast.makeText(this@CameraActivity, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
+                            
+                            tempFile.delete()
+                        }
                     }
                     
                     override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                        try {
-                            // Re-enable capture button
-                            captureButton.isEnabled = true
-                            
-                            // Verify file exists and has non-zero size
-                            if (outputFile == null || !outputFile!!.exists() || outputFile!!.length() == 0L) {
-                                throw IOException("File was not created properly")
-                            }
-                            
-                            Log.d(TAG, "Photo captured successfully: ${outputFile?.absolutePath}")
-                            
-                            // Fix orientation and read the corrected bitmap
-                            val bitmap = ImageUtils.fixPhotoOrientation(outputFile!!.absolutePath)
-                            if (bitmap == null) {
-                                throw IOException("Failed to decode bitmap from file")
-                            }
-                            
-                            // The bitmap is already saved by fixPhotoOrientation method
-                            // FileUtils.saveBitmapToFile(bitmap, outputFile!!)
-                            
-                            // Create file path for marked version
-                            val originalPath = outputFile!!.absolutePath
-                            val markedPath = originalPath.replace(".jpg", "_marked.jpg")
-                            val markedFile = File(markedPath)
-                            
-                            // Check if normal photo mode is enabled
-                            val markedBitmap: Bitmap
-                            if (normalPhotoMode) {
-                                // In normal photo mode, don't add the circle
-                                markedBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true)
-                            } else {
-                                // Create a marked version with the defect category indicator
-                                markedBitmap = ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)
-                            }
-                            
-                            // Save the marked version
-                            val markedSaved = FileUtils.saveBitmapToFile(markedBitmap, markedFile)
-                            
-                            if (!markedSaved) {
-                                Log.e(TAG, "Failed to save marked image")
-                                Toast.makeText(this@CameraActivity, R.string.error_save_image, Toast.LENGTH_LONG).show()
-                                return
-                            }
-                            
-                            // Add the paths to the ItemData (in the lists and legacy fields)
-                            if (isBoxPhoto) {
-                                itemData.addBoxPhoto(originalPath, markedPath)
-                            } else {
-                                itemData.addProductPhoto(originalPath, markedPath)
-                            }
-                            
-                            // Increment the photo index for next photo
-                            currentPhotoIndex++
-                            
-                            // Update the photo count display
-                            updatePhotoCountDisplay()
-                            
-                            Log.d(TAG, "Original photo saved at: $originalPath")
-                            Log.d(TAG, "Marked photo saved at: $markedPath")
-                            
-                            // Use the marked file for preview
-                            outputFile = markedFile
-                            outputUri = Uri.fromFile(markedFile)
-                            showImagePreview()
-                            
-                            Toast.makeText(this@CameraActivity, "Photo saved", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            Log.e(TAG, "Error after saving image", e)
-                            Toast.makeText(this@CameraActivity, R.string.error_save_image, Toast.LENGTH_LONG).show()
-                            
-                            // Clean up any partially written files
-                            outputFile?.delete()
-                            outputFile = null
-                            outputUri = null
-                        }
+                        // Photo is captured! Now process it asynchronously
+                        processPhotoAsync(tempFile)
                     }
+
                 }
             )
         } catch (e: Exception) {
-            // Re-enable capture button
-            captureButton.isEnabled = true
+            // Hide processing indicator
+            processingIndicator.visibility = View.GONE
             
+            isProcessingPhoto = false
+            captureButton.isEnabled = true
             Log.e(TAG, "Error taking photo", e)
             Toast.makeText(this, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
+        }
+    }
+    
+    /**
+     * Show immediate visual feedback that photo was captured
+     */
+    private fun showCaptureAnimation() {
+        // Create a quick flash effect to show photo was taken
+        val flashOverlay = View(this).apply {
+            setBackgroundColor(Color.WHITE)
+            alpha = 0f
+        }
+        
+        val container = findViewById<FrameLayout>(R.id.camera_container)
+        container.addView(flashOverlay, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT
+        ))
+        
+        // Animate the flash
+        flashOverlay.animate()
+            .alpha(0.7f)
+            .setDuration(100)
+            .withEndAction {
+                flashOverlay.animate()
+                    .alpha(0f)
+                    .setDuration(100)
+                    .withEndAction {
+                        container.removeView(flashOverlay)
+                    }
+                    .start()
+            }
+            .start()
+    }
+    
+    /**
+     * Process the captured photo asynchronously in background thread
+     */
+    private fun processPhotoAsync(tempFile: File) {
+        processingScope.launch {
+            try {
+                // Update processing text on main thread
+                withContext(Dispatchers.Main) {
+                    processingText.text = getString(R.string.processing_previous_photo)
+                }
+                
+                // Verify file exists and has non-zero size
+                if (!tempFile.exists() || tempFile.length() == 0L) {
+                    throw IOException("File was not created properly")
+                }
+                
+                Log.d(TAG, "Processing photo: ${tempFile.absolutePath}")
+                
+                // Read and fix orientation (heavy operation in background)
+                val bitmap = ImageUtils.fixPhotoOrientation(tempFile.absolutePath)
+                if (bitmap == null) {
+                    throw IOException("Failed to decode bitmap from file")
+                }
+                
+                // Create marked version (heavy operation in background)
+                val markedBitmap: Bitmap = if (normalPhotoMode) {
+                    bitmap.copy(Bitmap.Config.ARGB_8888, true)
+                } else {
+                    ImageUtils.addCircleToImage(bitmap, selectedCircleColor, selectedCircleText)
+                }
+                
+                // Create file path for marked version
+                val originalPath = tempFile.absolutePath
+                val markedPath = originalPath.replace(".jpg", "_marked.jpg")
+                val markedFile = File(markedPath)
+                
+                // Save the marked version (heavy operation in background)
+                val markedSaved = FileUtils.saveBitmapToFile(markedBitmap, markedFile)
+                
+                if (!markedSaved) {
+                    throw IOException("Failed to save marked image")
+                }
+                
+                // Update UI on main thread
+                withContext(Dispatchers.Main) {
+                    // Hide processing indicator
+                    processingIndicator.visibility = View.GONE
+                    
+                    // Add the paths to the ItemData
+                    if (isBoxPhoto) {
+                        itemData.addBoxPhoto(originalPath, markedPath)
+                    } else {
+                        itemData.addProductPhoto(originalPath, markedPath)
+                    }
+                    
+                    // Increment the photo index for next photo
+                    currentPhotoIndex++
+                    
+                    // Update the photo count display
+                    updatePhotoCountDisplay()
+                    
+                    Log.d(TAG, "Photo processed successfully")
+                    Log.d(TAG, "Original: $originalPath")
+                    Log.d(TAG, "Marked: $markedPath")
+                    
+                    // Store references for preview
+                    outputFile = markedFile
+                    outputUri = Uri.fromFile(markedFile)
+                    
+                    // Show preview immediately
+                    showImagePreview()
+                    
+                    // Re-enable capture button
+                    isProcessingPhoto = false
+                    captureButton.isEnabled = true
+                    
+                    Toast.makeText(this@CameraActivity, R.string.photo_ready, Toast.LENGTH_SHORT).show()
+                }
+                
+                // Clean up bitmaps
+                bitmap.recycle()
+                markedBitmap.recycle()
+                
+            } catch (e: Exception) {
+                Log.e(TAG, "Error processing photo", e)
+                
+                // Update UI on main thread
+                withContext(Dispatchers.Main) {
+                    // Hide processing indicator
+                    processingIndicator.visibility = View.GONE
+                    
+                    Toast.makeText(this@CameraActivity, R.string.error_photo_processing, Toast.LENGTH_LONG).show()
+                    
+                    // Clean up
+                    tempFile.delete()
+                    isProcessingPhoto = false
+                    captureButton.isEnabled = true
+                }
+            }
         }
     }
     
@@ -627,6 +717,7 @@ class CameraActivity : BaseActivity() {
     override fun onDestroy() {
         super.onDestroy()
         cameraExecutor.shutdown()
+        processingScope.cancel() // Cancel all background operations
     }
     
     companion object {

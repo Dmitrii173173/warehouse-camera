@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="flash_on">闪光灯已开启</string>
+    <string name="flash_off">闪光灯已关闭</string>
+    <string name="error_flash_not_available">此设备上不支持闪光灯</string>
+</resources>
