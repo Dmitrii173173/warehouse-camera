@@ -6,10 +6,16 @@
     android:layout_height="match_parent"
     tools:context=".ui.CameraActivity">
 
-    <androidx.camera.view.PreviewView
-        android:id="@+id/viewFinder"
+    <FrameLayout
+        android:id="@+id/camera_container"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="match_parent">
+        
+        <androidx.camera.view.PreviewView
+            android:id="@+id/viewFinder"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
 
     <!-- Top toolbar with back button -->
     <LinearLayout
@@ -41,6 +47,31 @@
             android:text="@string/photo_count"
             android:textColor="@color/white"
             android:textSize="16sp" />
+    </LinearLayout>
+
+    <!-- Camera controls -->    
+    <LinearLayout
+        android:id="@+id/camera_controls"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"
+        android:background="#80000000"
+        android:orientation="vertical"
+        android:padding="8dp"
+        android:layout_marginEnd="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent">
+
+        <ImageButton
+            android:id="@+id/button_flash"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
+            android:layout_marginBottom="16dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/toggle_flashlight"
+            android:src="@drawable/ic_flash_off"
+            android:tint="@color/white"
+            android:padding="8dp" />
     </LinearLayout>
 
     <!-- Color selection circles and normal photo toggle -->
@@ -192,8 +223,9 @@
                 android:paddingTop="14dp"
                 android:paddingBottom="14dp"
                 android:stateListAnimator="@animator/button_state_list_animator"
-                android:text="@string/add_more_photos"
+                android:text="+ ДОБАВИТЬ ЕЩЁ ФОТО +"
                 android:textColor="@color/white"
+                android:textSize="14sp"
                 android:visibility="gone" />
 
             <LinearLayout
@@ -207,11 +239,12 @@
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_button_primary"
+                    android:background="@drawable/bg_button_red"
                     android:paddingTop="14dp"
                     android:paddingBottom="14dp"
                     android:stateListAnimator="@animator/button_state_list_animator"
-                    android:text="@string/retake"
+                    android:text="ПЕРЕСНЯТЬ"
+                    android:textSize="14sp"
                     android:textColor="@color/white" />
 
                 <Button
@@ -219,25 +252,14 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:background="@drawable/bg_button_primary"
+                    android:background="@drawable/bg_button_green"
                     android:paddingTop="14dp"
                     android:paddingBottom="14dp"
                     android:stateListAnimator="@animator/button_state_list_animator"
-                    android:text="@string/use_photo"
+                    android:text="ГОТОВО"
+                    android:textSize="14sp"
                     android:textColor="@color/white" />
             </LinearLayout>
-
-            <Button
-                android:id="@+id/button_next_item"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:background="@drawable/bg_button_primary"
-                android:paddingTop="14dp"
-                android:paddingBottom="14dp"
-                android:stateListAnimator="@animator/button_state_list_animator"
-                android:text="@string/next_item"
-                android:textColor="@color/white" />
         </LinearLayout>
     </FrameLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -8,6 +8,7 @@ import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
+import android.view.MotionEvent
 import android.view.View
 import android.widget.Button
 import android.widget.FrameLayout
@@ -17,6 +18,8 @@ import android.widget.RadioButton
 import android.widget.RadioGroup
 import android.widget.Switch
 import android.widget.TextView
+import androidx.camera.core.FocusMeteringAction
+import androidx.camera.core.TorchState
 import android.widget.Toast
 import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
@@ -39,17 +42,18 @@ import java.util.concurrent.Executors
 
 class CameraActivity : BaseActivity() {
     private lateinit var viewFinder: PreviewView
+    private var camera: Camera? = null
     private lateinit var captureButton: FloatingActionButton
     private lateinit var previewContainer: FrameLayout
     private lateinit var imagePreview: ImageView
     private lateinit var retakeButton: Button
     private lateinit var usePhotoButton: Button
-    private lateinit var nextItemButton: Button
     private lateinit var addMoreButton: Button
     private lateinit var photoCountText: TextView
     private lateinit var backButton: ImageButton
     private lateinit var backPreviewButton: ImageButton
     private lateinit var normalPhotoSwitch: Switch
+    private lateinit var flashButton: ImageButton
     
     // Radio buttons for the color circles
     private lateinit var radioGroupCircles: RadioGroup
@@ -115,12 +119,12 @@ class CameraActivity : BaseActivity() {
         imagePreview = findViewById(R.id.image_preview)
         retakeButton = findViewById(R.id.button_retake)
         usePhotoButton = findViewById(R.id.button_use_photo)
-        nextItemButton = findViewById(R.id.button_next_item)
         addMoreButton = findViewById(R.id.button_add_more_photos)
         photoCountText = findViewById(R.id.photo_count_text)
         backButton = findViewById(R.id.button_back)
         backPreviewButton = findViewById(R.id.button_back_preview)
         normalPhotoSwitch = findViewById(R.id.switch_normal_photo)
+        flashButton = findViewById(R.id.button_flash)
         
         // Update photo count display
         updatePhotoCountDisplay()
@@ -180,12 +184,25 @@ class CameraActivity : BaseActivity() {
         captureButton.setOnClickListener { takePhoto() }
         retakeButton.setOnClickListener { retakePhoto() }
         usePhotoButton.setOnClickListener { usePhoto() }
-        nextItemButton.setOnClickListener { saveAndMoveToNextItem() }
         addMoreButton.setOnClickListener { addMorePhotos() }
         backButton.setOnClickListener { onBackPressed() }
         backPreviewButton.setOnClickListener { retakePhoto() }
         normalPhotoSwitch.setOnCheckedChangeListener { _, isChecked ->
             normalPhotoMode = isChecked
+        }
+        
+        // Set up flash button
+        flashButton.setOnClickListener {
+            toggleFlash()
+        }
+        
+        // Set up touch listener for focus
+        viewFinder.setOnTouchListener { _, event ->
+            if (event.action == MotionEvent.ACTION_DOWN) {
+                focusOnPoint(event.x, event.y)
+                return@setOnTouchListener true
+            }
+            return@setOnTouchListener false
         }
         
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -226,7 +243,7 @@ class CameraActivity : BaseActivity() {
                 cameraProvider.unbindAll()
                 
                 // Bind use cases to camera
-                cameraProvider.bindToLifecycle(
+                camera = cameraProvider.bindToLifecycle(
                     this, cameraSelector, preview, imageCapture
                 )
                 
@@ -477,26 +494,6 @@ class CameraActivity : BaseActivity() {
         outputUri = null
     }
     
-    private fun saveAndMoveToNextItem() {
-        // First save current photo if one was taken
-        if ((outputFile == null || !outputFile!!.exists()) && 
-            ((isBoxPhoto && itemData.getBoxPhotoCount() == 0) || 
-             (!isBoxPhoto && itemData.getProductPhotoCount() == 0))) {
-            Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
-            return
-        }
-        
-        // Update category in the item data
-        itemData.defectCategory = defectCategory
-        
-        // Get next item in same reception
-        val resultIntent = Intent()
-        resultIntent.putExtra("updatedItemData", itemData)
-        resultIntent.putExtra("moveToNextItem", true)
-        setResult(Activity.RESULT_OK, resultIntent)
-        finish()
-    }
-    
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
@@ -511,6 +508,119 @@ class CameraActivity : BaseActivity() {
                 Toast.makeText(this, R.string.error_camera_permission, Toast.LENGTH_SHORT).show()
                 finish()
             }
+        }
+    }
+    
+    /**
+     * Focus camera on a specific point on the preview
+     */
+    private fun focusOnPoint(x: Float, y: Float) {
+        val camera = camera ?: return
+        
+        // Convert the tap coordinates to a MeteringPoint
+        val meteringPoint = viewFinder.meteringPointFactory.createPoint(x, y)
+        
+        // Create a MeteringAction with auto-focus, auto-exposure, and auto-white-balance
+        val action = FocusMeteringAction.Builder(meteringPoint)
+            .setAutoCancelDuration(3, java.util.concurrent.TimeUnit.SECONDS)
+            .build()
+        
+        // Start the focus animation
+        showFocusPoint(x, y)
+        
+        // Execute the focus action
+        camera.cameraControl.startFocusAndMetering(action)
+            .addListener({
+                // Focus completed
+                hideFocusPoint()
+            }, ContextCompat.getMainExecutor(this))
+    }
+    
+    /**
+     * Show focus animation at the tapped point
+     */
+    private fun showFocusPoint(x: Float, y: Float) {
+        // Create and add a focus indicator to the UI
+        val focusIndicator = View(this).apply {
+            id = View.generateViewId()
+            background = ContextCompat.getDrawable(this@CameraActivity, R.drawable.focus_circle)
+            elevation = 10f
+            alpha = 0.7f
+        }
+        
+        // Add the indicator to the layout
+        val container = findViewById<FrameLayout>(R.id.camera_container)
+        container.addView(focusIndicator)
+        
+        // Position the indicator
+        focusIndicator.post {
+            val size = resources.getDimensionPixelSize(R.dimen.focus_circle_size)
+            focusIndicator.x = x - (size / 2)
+            focusIndicator.y = y - (size / 2)
+            focusIndicator.layoutParams = FrameLayout.LayoutParams(size, size)
+            
+            // Animate the indicator
+            focusIndicator.animate()
+                .scaleX(1.2f).scaleY(1.2f)
+                .setDuration(100)
+                .withEndAction {
+                    focusIndicator.animate()
+                        .scaleX(1.0f).scaleY(1.0f)
+                        .setDuration(100)
+                        .start()
+                }
+                .start()
+        }
+        
+        // Remove the indicator after a delay
+        focusIndicator.postDelayed({
+            container.removeView(focusIndicator)
+        }, 1000)
+    }
+    
+    /**
+     * Hide focus animation
+     */
+    private fun hideFocusPoint() {
+        // This will be called when focus is complete
+        // The focus point view will be removed by the delayed post in showFocusPoint
+    }
+    
+    /**
+     * Toggle flash on/off
+     */
+    private fun toggleFlash() {
+        val cam = camera ?: return
+        
+        try {
+            // Get current torch state
+            val torchState = cam.cameraInfo.torchState.value
+            val isCurrentlyOn = torchState == TorchState.ON
+            
+            // Toggle to opposite state
+            val newTorchState = !isCurrentlyOn
+            
+            // Enable or disable torch
+            cam.cameraControl.enableTorch(newTorchState)
+            
+            // Update flash button icon
+            val flashIcon = if (newTorchState) {
+                R.drawable.ic_flash_on
+            } else {
+                R.drawable.ic_flash_off
+            }
+            flashButton.setImageResource(flashIcon)
+            
+            // Show feedback to user
+            val flashMessage = if (newTorchState) {
+                getString(R.string.flash_on)
+            } else {
+                getString(R.string.flash_off)
+            }
+            Toast.makeText(this, flashMessage, Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Log.e(TAG, "Error toggling flash", e)
+            Toast.makeText(this, R.string.error_flash_not_available, Toast.LENGTH_SHORT).show()
         }
     }
     
