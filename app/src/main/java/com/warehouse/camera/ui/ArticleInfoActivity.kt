@@ -3,6 +3,7 @@ package com.warehouse.camera.ui
 import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.Button
 import android.widget.RadioButton
 import android.widget.RadioGroup
@@ -24,6 +25,7 @@ class ArticleInfoActivity : BaseActivity() {
     private lateinit var quantityEditText: TextInputEditText
     private lateinit var defectCategoryRadioGroup: RadioGroup
     private lateinit var nextButton: Button
+    private lateinit var nextTopButton: Button
     private lateinit var scanBarcodeButton: Button
     
     private lateinit var barcodeScannerLauncher: ActivityResultLauncher<Intent>
@@ -48,6 +50,7 @@ class ArticleInfoActivity : BaseActivity() {
         quantityEditText = findViewById(R.id.editText_quantity)
         defectCategoryRadioGroup = findViewById(R.id.radioGroup_defect_category)
         nextButton = findViewById(R.id.button_next)
+        nextTopButton = findViewById(R.id.button_next_top)
         scanBarcodeButton = findViewById(R.id.button_scan_barcode)
         
         // Setup toolbar with back button
@@ -79,8 +82,8 @@ class ArticleInfoActivity : BaseActivity() {
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
         }
         
-        // Next button click
-        nextButton.setOnClickListener {
+        // Next button click (both top and bottom buttons)
+        val nextClickListener = View.OnClickListener {
             if (validateInputs()) {
                 val articleCode = articleCodeEditText.text.toString()
                 val quantity = quantityEditText.text.toString().toInt()
@@ -99,6 +102,9 @@ class ArticleInfoActivity : BaseActivity() {
                 startActivityWithAnimation(intent)
             }
         }
+        
+        nextButton.setOnClickListener(nextClickListener)
+        nextTopButton.setOnClickListener(nextClickListener)
     }
     
     private fun validateInputs(): Boolean {

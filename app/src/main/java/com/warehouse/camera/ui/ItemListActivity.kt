@@ -173,9 +173,9 @@ class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
         completeButton.setOnClickListener {
             // Check if all items are completed
             if (items.all { it.isCompleted }) {
-                // Navigate to ArticleInfoActivity
+                // Navigate to ArticleInfoActivity to continue work
                 val intent = Intent(this, ArticleInfoActivity::class.java)
-                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
                 // Pass the manufacturerInfo so the flow can continue
                 intent.putExtra("manufacturerInfo", manufacturerInfo)
                 startActivityWithAnimation(intent)

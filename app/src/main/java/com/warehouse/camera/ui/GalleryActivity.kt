@@ -101,15 +101,16 @@ class GalleryActivity : AppCompatActivity() {
         
         // Set click listener for box photo to open viewer or list if multiple photos
         boxPhotoImageView.setOnClickListener {
-            if (itemData.getBoxPhotoCount() > 1) {
-                // Open gallery browser with all box photos
+            val allBoxPhotos = getAllBoxPhotos(itemData)
+            if (allBoxPhotos.size > 1) {
+                // Open gallery browser with all box photos (including marked ones)
                 val intent = Intent(this, GalleryBrowserActivity::class.java)
-                intent.putStringArrayListExtra("photosList", itemData.boxPhotoPaths)
+                intent.putStringArrayListExtra("photosList", ArrayList(allBoxPhotos))
                 intent.putExtra("photoType", getString(R.string.gallery_box_photo))
                 startActivity(intent)
-            } else if (boxPhotoPath != null && File(boxPhotoPath).exists()) {
+            } else if (allBoxPhotos.isNotEmpty() && File(allBoxPhotos[0]).exists()) {
                 // Open single photo viewer
-                openImageViewer(boxPhotoPath)
+                openImageViewer(allBoxPhotos[0])
             }
         }
         
@@ -123,15 +124,16 @@ class GalleryActivity : AppCompatActivity() {
         
         // Set click listener for product photo to open viewer or list if multiple photos
         productPhotoImageView.setOnClickListener {
-            if (itemData.getProductPhotoCount() > 1) {
-                // Open gallery browser with all product photos
+            val allProductPhotos = getAllProductPhotos(itemData)
+            if (allProductPhotos.size > 1) {
+                // Open gallery browser with all product photos (including marked ones)
                 val intent = Intent(this, GalleryBrowserActivity::class.java)
-                intent.putStringArrayListExtra("photosList", itemData.productPhotoPaths)
+                intent.putStringArrayListExtra("photosList", ArrayList(allProductPhotos))
                 intent.putExtra("photoType", getString(R.string.gallery_product_photo))
                 startActivity(intent)
-            } else if (productPhotoPath != null && File(productPhotoPath).exists()) {
+            } else if (allProductPhotos.isNotEmpty() && File(allProductPhotos[0]).exists()) {
                 // Open single photo viewer
-                openImageViewer(productPhotoPath)
+                openImageViewer(allProductPhotos[0])
             }
         }
         
@@ -275,6 +277,48 @@ class GalleryActivity : AppCompatActivity() {
             Toast.makeText(this, R.string.delete_error, Toast.LENGTH_SHORT).show()
             Log.e(TAG, "Error deleting item folder", e)
         }
+    }
+    
+    /**
+     * Получить все фотографии коробки (включая маркированные)
+     */
+    private fun getAllBoxPhotos(itemData: ItemData): List<String> {
+        val allPhotos = mutableListOf<String>()
+        
+        // Добавляем все обычные фотографии коробки
+        allPhotos.addAll(itemData.boxPhotoPaths.filter { File(it).exists() })
+        
+        // Добавляем все маркированные фотографии коробки  
+        allPhotos.addAll(itemData.boxPhotoMarkedPaths.filter { File(it).exists() })
+        
+        // Если списки пустые, проверяем старые одиночные поля для обратной совместимости
+        if (allPhotos.isEmpty()) {
+            itemData.boxPhotoPath?.let { if (File(it).exists()) allPhotos.add(it) }
+            itemData.boxPhotoMarkedPath?.let { if (File(it).exists()) allPhotos.add(it) }
+        }
+        
+        return allPhotos
+    }
+    
+    /**
+     * Получить все фотографии продукта (включая маркированные)
+     */
+    private fun getAllProductPhotos(itemData: ItemData): List<String> {
+        val allPhotos = mutableListOf<String>()
+        
+        // Добавляем все обычные фотографии продукта
+        allPhotos.addAll(itemData.productPhotoPaths.filter { File(it).exists() })
+        
+        // Добавляем все маркированные фотографии продукта
+        allPhotos.addAll(itemData.productPhotoMarkedPaths.filter { File(it).exists() })
+        
+        // Если списки пустые, проверяем старые одиночные поля для обратной совместимости
+        if (allPhotos.isEmpty()) {
+            itemData.productPhotoPath?.let { if (File(it).exists()) allPhotos.add(it) }
+            itemData.productPhotoMarkedPath?.let { if (File(it).exists()) allPhotos.add(it) }
+        }
+        
+        return allPhotos
     }
     
     companion object {
