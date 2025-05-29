@@ -22,6 +22,7 @@ import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
 import com.warehouse.camera.ui.base.BaseActivity
 import com.warehouse.camera.utils.FileUtils
+import java.io.File
 
 class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
 
@@ -257,6 +258,7 @@ class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("manufacturerInfo", manufacturerInfo)
         intent.putExtra("articleInfo", articleInfo)
+        intent.putExtra("defectDetails", defectDetails)
         intent.putExtra("itemData", item)
         intent.putExtra("isBoxPhoto", true)
         intent.putExtra("defectCategory", selectedCategory)
@@ -279,6 +281,7 @@ class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
         val intent = Intent(this, CameraActivity::class.java)
         intent.putExtra("manufacturerInfo", manufacturerInfo)
         intent.putExtra("articleInfo", articleInfo)
+        intent.putExtra("defectDetails", defectDetails)
         intent.putExtra("itemData", item)
         intent.putExtra("isBoxPhoto", false)
         intent.putExtra("defectCategory", selectedCategory)
@@ -292,7 +295,11 @@ class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
         // Make sure the item has the selected category
         item.defectCategory = selectedCategory
         
-        // Save text file
+        // Save text file with detailed logging
+        android.util.Log.d("ItemListActivity", "Attempting to save text file for item: ${item.fullArticleCode}")
+        android.util.Log.d("ItemListActivity", "Item details - Category: ${item.defectCategory}, Article: ${item.fullArticleCode}")
+        android.util.Log.d("ItemListActivity", "Defect details - Reason: ${defectDetails.reason}, Template: ${defectDetails.template}")
+        
         val success = FileUtils.saveTextFile(
             this,
             manufacturerInfo,
@@ -301,14 +308,45 @@ class ItemListActivity : BaseActivity(), ItemAdapter.ItemActionsListener {
             item
         )
         
+        android.util.Log.d("ItemListActivity", "Text file save result: $success")
+        
         if (success) {
             // Mark item as completed
             item.isCompleted = true
             adapter.notifyItemChanged(position)
             
-            Toast.makeText(this, R.string.item_saved, Toast.LENGTH_SHORT).show()
+            // Show detailed success message with path
+            val itemDir = FileUtils.createDirectoryStructure(this, manufacturerInfo, item)
+            val textFileName = "${item.fullArticleCode}.txt"
+            val expectedPath = if (itemDir != null) {
+                "${itemDir.absolutePath}/$textFileName"
+            } else {
+                "Неизвестная папка"
+            }
+            
+            Toast.makeText(
+                this, 
+                "${getString(R.string.item_saved)}\n${getString(R.string.photo_and_annotation_saved)}\n\nТекстовый файл: $expectedPath", 
+                Toast.LENGTH_LONG
+            ).show()
         } else {
-            Toast.makeText(this, R.string.error_save_text, Toast.LENGTH_SHORT).show()
+            // Show error message with more context
+            Toast.makeText(this, "${getString(R.string.error_save_text)}\nПопробуйте ещё раз", Toast.LENGTH_LONG).show()
+            android.util.Log.e("ItemListActivity", "Failed to save text file for item: ${item.fullArticleCode}")
+            
+            // Try to create a minimal test file to diagnose the issue
+            try {
+                val testFile = File(this.filesDir, "test_${System.currentTimeMillis()}.txt")
+                testFile.writeText("Test content")
+                if (testFile.exists()) {
+                    android.util.Log.d("ItemListActivity", "Test file creation successful: ${testFile.absolutePath}")
+                    testFile.delete() // Clean up
+                } else {
+                    android.util.Log.e("ItemListActivity", "Test file creation failed")
+                }
+            } catch (e: Exception) {
+                android.util.Log.e("ItemListActivity", "Test file creation exception", e)
+            }
         }
     }
     

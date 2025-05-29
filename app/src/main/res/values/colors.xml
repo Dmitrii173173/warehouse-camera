@@ -22,4 +22,8 @@
     <color name="red">#FF3B30</color>
     <color name="status_pending">#FF9500</color>
     <color name="ic_launcher_background">#FFFFFF</color>
+    
+    <!-- Button colors -->
+    <color name="primary_blue">#007AFF</color>
+    <color name="primary_blue_dark">#0062CC</color>
 </resources>

@@ -28,6 +28,7 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
+import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
 import com.warehouse.camera.ui.base.BaseActivity
@@ -79,6 +80,7 @@ class CameraActivity : BaseActivity() {
     private lateinit var manufacturerInfo: ManufacturerInfo
     private lateinit var articleInfo: ArticleInfo
     private lateinit var itemData: ItemData
+    private var defectDetails: DefectDetails? = null
     private var isBoxPhoto: Boolean = false
     private var defectCategory: Int = 1 // Default category
     private var currentPhotoIndex: Int = 0 // Track the current photo index
@@ -115,6 +117,14 @@ class CameraActivity : BaseActivity() {
             @Suppress("DEPRECATION")
             intent.getParcelableExtra("itemData")
         } ?: throw IllegalStateException("ItemData must be provided")
+        
+        // Получаем DefectDetails если они переданы
+        defectDetails = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            intent.getParcelableExtra("defectDetails", DefectDetails::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            intent.getParcelableExtra("defectDetails")
+        }
         
         isBoxPhoto = intent.getBooleanExtra("isBoxPhoto", false)
         defectCategory = intent.getIntExtra("defectCategory", 1)
@@ -553,20 +563,69 @@ class CameraActivity : BaseActivity() {
     }
     
     private fun usePhoto() {
-        // Update item data
-        if (outputFile == null || !outputFile!!.exists()) {
-            // If we have at least one photo, allow to proceed
-            if ((isBoxPhoto && itemData.getBoxPhotoCount() > 0) || 
-                (!isBoxPhoto && itemData.getProductPhotoCount() > 0)) {
-                // Continue with saving
-            } else {
-                Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
-                return
-            }
+        // Check if we have any photos at all
+        val hasPhotos = (isBoxPhoto && itemData.getBoxPhotoCount() > 0) || 
+                       (!isBoxPhoto && itemData.getProductPhotoCount() > 0)
+        
+        if (!hasPhotos) {
+            Toast.makeText(this, R.string.error_save_image, Toast.LENGTH_SHORT).show()
+            return
         }
         
         // Update category in the item data
         itemData.defectCategory = defectCategory
+        
+        // Принудительно сохраняем все фотографии на диск
+        Log.d(TAG, "Forcing save of all photos to disk...")
+        val photosSavedSuccessfully = forceSaveAllPhotos()
+        
+        if (!photosSavedSuccessfully) {
+            Toast.makeText(this, "Ошибка: не удалось сохранить все фотографии", Toast.LENGTH_LONG).show()
+            Log.e(TAG, "Failed to save all photos to disk")
+            return
+        }
+        
+        // Автоматически сохраняем текстовый файл с аннотациями если есть DefectDetails
+        if (defectDetails != null) {
+            try {
+                Log.d(TAG, "Attempting to save text file...")
+                val textSaved = FileUtils.saveTextFile(
+                    this,
+                    manufacturerInfo,
+                    articleInfo,
+                    defectDetails!!,
+                    itemData
+                )
+                
+                if (textSaved) {
+                    Log.d(TAG, "Text annotations saved successfully")
+                    
+                    // Show detailed success message with path
+                    val itemDir = FileUtils.createDirectoryStructure(this, manufacturerInfo, itemData)
+                    val textFileName = "${itemData.fullArticleCode}.txt"
+                    val expectedPath = if (itemDir != null) {
+                        "${itemDir.absolutePath}/$textFileName"
+                    } else {
+                        "Неизвестная папка"
+                    }
+                    
+                    Toast.makeText(
+                        this, 
+                        "${getString(R.string.photo_and_annotation_saved)}\n\nТекстовый файл: $expectedPath", 
+                        Toast.LENGTH_LONG
+                    ).show()
+                } else {
+                    Log.w(TAG, "Failed to save text annotations")
+                    Toast.makeText(this, getString(R.string.photo_saved_annotation_failed), Toast.LENGTH_LONG).show()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Error saving text annotations", e)
+                Toast.makeText(this, "${getString(R.string.photo_saved_annotation_failed)}\nОшибка: ${e.message}", Toast.LENGTH_LONG).show()
+            }
+        } else {
+            Log.w(TAG, "DefectDetails is null - cannot save text annotations")
+            Toast.makeText(this, "Фото сохранено, но текстовые аннотации недоступны", Toast.LENGTH_SHORT).show()
+        }
         
         // Set result and finish
         val resultIntent = Intent()
@@ -711,6 +770,69 @@ class CameraActivity : BaseActivity() {
         } catch (e: Exception) {
             Log.e(TAG, "Error toggling flash", e)
             Toast.makeText(this, R.string.error_flash_not_available, Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    /**
+     * Принудительно сохраняет все фотографии на диск
+     */
+    private fun forceSaveAllPhotos(): Boolean {
+        try {
+            var allPhotosSaved = true
+            
+            // Проверяем и сохраняем фотографии коробки
+            if (isBoxPhoto) {
+                for (i in 0 until itemData.boxPhotoPaths.size) {
+                    val originalPath = itemData.boxPhotoPaths[i]
+                    val markedPath = itemData.boxPhotoMarkedPaths[i]
+                    
+                    val originalFile = File(originalPath)
+                    val markedFile = File(markedPath)
+                    
+                    Log.d(TAG, "Checking box photo $i:")
+                    Log.d(TAG, "  Original: ${originalFile.absolutePath}, exists: ${originalFile.exists()}, size: ${if(originalFile.exists()) originalFile.length() else 0}")
+                    Log.d(TAG, "  Marked: ${markedFile.absolutePath}, exists: ${markedFile.exists()}, size: ${if(markedFile.exists()) markedFile.length() else 0}")
+                    
+                    if (!originalFile.exists() || originalFile.length() == 0L) {
+                        Log.e(TAG, "Original box photo missing or empty: $originalPath")
+                        allPhotosSaved = false
+                    }
+                    
+                    if (!markedFile.exists() || markedFile.length() == 0L) {
+                        Log.e(TAG, "Marked box photo missing or empty: $markedPath")
+                        allPhotosSaved = false
+                    }
+                }
+            } else {
+                for (i in 0 until itemData.productPhotoPaths.size) {
+                    val originalPath = itemData.productPhotoPaths[i]
+                    val markedPath = itemData.productPhotoMarkedPaths[i]
+                    
+                    val originalFile = File(originalPath)
+                    val markedFile = File(markedPath)
+                    
+                    Log.d(TAG, "Checking product photo $i:")
+                    Log.d(TAG, "  Original: ${originalFile.absolutePath}, exists: ${originalFile.exists()}, size: ${if(originalFile.exists()) originalFile.length() else 0}")
+                    Log.d(TAG, "  Marked: ${markedFile.absolutePath}, exists: ${markedFile.exists()}, size: ${if(markedFile.exists()) markedFile.length() else 0}")
+                    
+                    if (!originalFile.exists() || originalFile.length() == 0L) {
+                        Log.e(TAG, "Original product photo missing or empty: $originalPath")
+                        allPhotosSaved = false
+                    }
+                    
+                    if (!markedFile.exists() || markedFile.length() == 0L) {
+                        Log.e(TAG, "Marked product photo missing or empty: $markedPath")
+                        allPhotosSaved = false
+                    }
+                }
+            }
+            
+            Log.d(TAG, "Force save check completed. All photos saved: $allPhotosSaved")
+            return allPhotosSaved
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in forceSaveAllPhotos", e)
+            return false
         }
     }
     

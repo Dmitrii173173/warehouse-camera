@@ -27,11 +27,29 @@
     <!-- Help Screen -->
     <string name="help_title">使用说明</string>
     <string name="help_storage_title">文件保存在哪里？</string>
-    <string name="help_storage_description">照片和报告保存在设备上的以下位置：\n\n内部存储：DCIM/Camera/warehouse/\n\n您可以使用USB电缆将这些文件传输到计算机。</string>
+    <string name="help_storage_description">照片和报告保存在您设备上的以下位置：
+
+内部存储：DCIM/warehouse/
+
+对于Android 10+设备，文件保存在：
+Android/data/com.warehouse.camera/files/Pictures/warehouse/
+
+您可以使用USB电缆将这些文件传输到计算机，或直接在应用程序内的文件结构浏览器中查看。</string>
     <string name="help_howto_title">如何使用应用程序</string>
-    <string name="help_howto_description">1. 创建或选择验收\n2. 输入制造商代码并选择日期\n3. 选择缺陷类别\n4. 输入物品信息\n5. 拍摄箱子和产品的照片\n6. 保存项目\n7. 完成记录</string>
-    <string name="help_gallery_title">相册</string>
-    <string name="help_gallery_description">相册按验收组织显示所有照片。您可以查看过去记录会话中的所有照片和详细信息。</string>
+    <string name="help_howto_description">1. 创建或选择验收
+2. 输入制造商代码（4位数字）并选择日期
+3. 选择缺陷类别（1-3根据严重程度）
+4. 输入物品信息并在需要时扫描条码
+5. 拍摄损坏照片和条码照片，并使用相应的颜色标记
+6. 保存物品
+7. 根据需要添加更多物品
+8. 在相册中查看您的照片
+9. 完成时完成文档化</string>
+    <string name="help_gallery_title">相册和文件管理</string>
+    <string name="help_gallery_description">• 相册：显示所有照片，按验收日期和物品代码组织
+• 文件结构：允许浏览完整的文件系统，包含所有保存的文档
+• 颜色标记：绿色（1）= 轻微缺陷，黄色（2）= 中度缺陷，红色（3）= 严重缺陷
+• 每个物品都保存原始和标记的照片</string>
     <string name="close">关闭</string>
     
     <!-- Manufacturer Info Screen -->
@@ -40,6 +58,7 @@
     <string name="date_label">日期</string>
     <string name="date_hint">选择日期</string>
     <string name="defect_category_label">缺陷类别</string>
+    <string name="defect_category_0">0 - 正常</string>
     <string name="defect_category_1">1 - 包装皱痕</string>
     <string name="defect_category_2">2 - 磨损</string>
     <string name="defect_category_3">3 - 有缺陷</string>
@@ -145,14 +164,37 @@
     <string name="image_viewer_share">分享</string>
     
     <!-- Error messages -->
+    <string name="error_empty_manufacturer_code">请输入制造商代码</string>
     <string name="error_invalid_manufacturer_code">制造商代码必须为4位数字</string>
     <string name="error_invalid_article">请输入有效的物品代码</string>
     <string name="error_invalid_quantity">数量必须在1到10之间</string>
     <string name="error_select_category">请选择缺陷类别</string>
+    <string name="error_select_reason">请选择原因</string>
+    <string name="error_select_template">请选择模板</string>
+    <string name="error_valid_description">请输入有效的描述</string>
     <string name="error_camera_permission">需要相机权限</string>
     <string name="error_storage_permission">需要存储权限</string>
     <string name="error_create_directory">无法创建目录</string>
     <string name="error_save_image">无法保存图像</string>
     <string name="error_save_text">无法保存文本文件</string>
-    <string name="complete_all_items">请完成记录所有项目</string>
+    <string name="error_permissions_required">使用此应用程序需要相机和存储权限</string>
+    <string name="no_more_items">没有更多项目可处理</string>
+    <string name="complete_all_items">请完成所有项目的文档化</string>
+    <string name="empty_directory">此文件夹为空</string>
+    <string name="file_explorer_title">文件资源管理器</string>
+    <string name="file_item_count">%1$d 项</string>
+    <string name="delete">删除</string>
+    <string name="confirm_delete_folder">您确定要删除文件夹“%1$s”及其所有内容吗？</string>
+    <string name="confirm_delete_file">您确定要删除文件“%1$s”吗？</string>
+    <string name="confirm">确定</string>
+    <string name="cancel">取消</string>
+    <string name="delete_success">成功删除</string>
+    <string name="delete_error">删除时出错</string>
+    
+    <!-- Text annotations -->
+    <string name="photo_and_annotation_saved">照片和文本注释成功保存！</string>
+    <string name="photo_saved_annotation_failed">照片已保存，但无法保存文本注释</string>
+    
+    <!-- Reception warnings -->
+    <string name="reception_created_warning">验收已创建，但无法创建目录。某些功能可能受限。</string>
 </resources>

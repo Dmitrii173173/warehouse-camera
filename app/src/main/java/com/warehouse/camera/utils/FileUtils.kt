@@ -407,7 +407,7 @@ object FileUtils {
         )
     }
     
-    // Improved method to save text file with defect information
+    // Improved method to save text file with defect information - PROPER VERSION
     fun saveTextFile(
         context: Context,
         manufacturerInfo: ManufacturerInfo,
@@ -415,106 +415,167 @@ object FileUtils {
         defectDetails: DefectDetails,
         itemData: ItemData
     ): Boolean {
-        try {
+        return try {
+            Log.d(TAG, "[SAVE] Starting to save text file for article: ${itemData.fullArticleCode}")
+            Log.d(TAG, "[SAVE] Manufacturer: ${manufacturerInfo.manufacturerCode}, Date: ${manufacturerInfo.date}")
+            Log.d(TAG, "[SAVE] Defect Category: ${itemData.defectCategory}")
+            
+            // Check storage permissions first
+            if (!PermissionUtils.hasStoragePermission(context)) {
+                Log.e(TAG, "[SAVE] No storage permission - requesting permissions")
+                PermissionUtils.requestStoragePermission(context)
+                return false
+            }
+            
+            // Create the same directory structure as photos
             val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData)
             if (itemDir == null) {
-                Log.e(TAG, "Failed to create directory structure for text file")
+                Log.e(TAG, "[SAVE] Failed to create directory structure")
                 
-                // Fallback to app's private directory
+                // Try fallback to app's private directory
+                Log.d(TAG, "[SAVE] Trying fallback to app private directory")
                 val privateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-                val privateItemDir = File(privateDir, "${manufacturerInfo.manufacturerCode}/${manufacturerInfo.date}/${itemData.defectCategory}/${itemData.fullArticleCode}")
-                if (!privateItemDir.exists()) {
-                    privateItemDir.mkdirs()
+                if (privateDir != null) {
+                    val fallbackDir = File(privateDir, "warehouse/${manufacturerInfo.manufacturerCode}/${manufacturerInfo.date}/${itemData.defectCategory}")
+                    if (fallbackDir.mkdirs() || fallbackDir.exists()) {
+                        val textFileName = "${itemData.fullArticleCode}.txt"
+                        val textFile = File(fallbackDir, textFileName)
+                        Log.d(TAG, "[SAVE] Using fallback directory: ${textFile.absolutePath}")
+                        return saveTextContentToFile(textFile, itemData, defectDetails)
+                    }
                 }
-                
-                val textFileName = "${itemData.fullArticleCode}.txt"
-                val textFile = File(privateItemDir, textFileName)
-                
-                return saveTextToFile(textFile, itemData, defectDetails)
+                return false
             }
             
-            // Make sure directory exists
-            if (!itemDir.exists()) {
-                val success = itemDir.mkdirs()
-                if (!success) {
-                    Log.e(TAG, "Failed to create directory for text file: ${itemDir.absolutePath}")
-                    return false
-                }
-            }
-            
+            // Create text file in the same directory as photos
             val textFileName = "${itemData.fullArticleCode}.txt"
             val textFile = File(itemDir, textFileName)
             
-            return saveTextToFile(textFile, itemData, defectDetails)
+            Log.d(TAG, "[SAVE] Target file: ${textFile.absolutePath}")
             
-        } catch (e: IOException) {
-            Log.e(TAG, "Error saving text file", e)
-            return false
+            // If file exists, delete it first
+            if (textFile.exists()) {
+                textFile.delete()
+                Log.d(TAG, "[SAVE] Deleted existing file")
+            }
+            
+            val result = saveTextContentToFile(textFile, itemData, defectDetails)
+            
+            Log.d(TAG, "[SAVE] Final result: $result")
+            return result
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "[SAVE] Exception in saveTextFile", e)
+            false
         }
     }
     
-    // Helper method to save text content to file with multilingual support
-    private fun saveTextToFile(file: File, itemData: ItemData, defectDetails: DefectDetails): Boolean {
-        try {
-            // Ensure the parent directory exists
-            val parentDir = file.parentFile
-            if (parentDir != null && !parentDir.exists()) {
-                parentDir.mkdirs()
+    // Ultra simple and reliable method to save text content to file
+    private fun saveTextContentToFile(file: File, itemData: ItemData, defectDetails: DefectDetails): Boolean {
+        return try {
+            Log.d(TAG, "[CONTENT] Preparing content for file: ${file.absolutePath}")
+            
+            // Validate input data
+            if (itemData.fullArticleCode.isBlank()) {
+                Log.e(TAG, "[CONTENT] Cannot save - article code is blank")
+                return false
             }
             
-            // Определяем исходный язык текста
-            val sourceLanguage = TranslationUtils.detectLanguage(defectDetails.description)
-            
-            // Переводим термины на все языки
-            val translatedReasons = TranslationUtils.getAvailableLanguages().associateWith { lang ->
-                TranslationUtils.translateReason(defectDetails.reason, lang)
+            // Create simple, clean text content
+            val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
+            val content = buildString {
+                appendLine("WAREHOUSE DOCUMENTATION")
+                appendLine("========================")
+                appendLine("")
+                appendLine("Article Code: ${itemData.fullArticleCode}")
+                appendLine("Defect Category: ${itemData.defectCategory}")
+                appendLine("Reason: ${defectDetails.reason}")
+                appendLine("Template: ${defectDetails.template}")
+                appendLine("Description: ${defectDetails.description}")
+                appendLine("Created: $timestamp")
+                appendLine("")
+                appendLine("РУССКИЙ")
+                appendLine("========")
+                appendLine("Артикул: ${itemData.fullArticleCode}")
+                appendLine("Категория: ${itemData.defectCategory}")
+                appendLine("Причина: ${defectDetails.reason}")
+                appendLine("Шаблон: ${defectDetails.template}")
+                appendLine("Описание: ${defectDetails.description}")
+                appendLine("Создано: $timestamp")
+                appendLine("")
+                appendLine("中文")
+                appendLine("====")
+                appendLine("物品编号: ${itemData.fullArticleCode}")
+                appendLine("缺陷类别: ${itemData.defectCategory}")
+                appendLine("原因: ${defectDetails.reason}")
+                appendLine("模板: ${defectDetails.template}")
+                appendLine("描述: ${defectDetails.description}")
+                appendLine("创建: $timestamp")
             }
             
-            val translatedTemplates = TranslationUtils.getAvailableLanguages().associateWith { lang ->
-                TranslationUtils.translateTemplate(defectDetails.template, lang)
+            Log.d(TAG, "[CONTENT] Content prepared, length: ${content.length} characters")
+            
+            // Try multiple approaches to write the file
+            var success = false
+            
+            // Method 1: Use writeText (most reliable)
+            try {
+                file.writeText(content, Charsets.UTF_8)
+                success = true
+                Log.d(TAG, "[CONTENT] Method 1 (writeText) successful")
+            } catch (e: Exception) {
+                Log.w(TAG, "[CONTENT] Method 1 (writeText) failed", e)
             }
             
-            FileOutputStream(file).use { outputStream ->
-                // Russian content
-                val russianContent = """
-                    Артикул: ${itemData.fullArticleCode}
-                    Категория дефекта: ${itemData.defectCategory}
-                    Причина: ${translatedReasons["ru"] ?: defectDetails.reason}
-                    Шаблон: ${translatedTemplates["ru"] ?: defectDetails.template}
-                    Описание: ${defectDetails.description}
-                """.trimIndent()
-                
-                // Chinese content
-                val chineseContent = """
-                    
-                    物品编号: ${itemData.fullArticleCode}
-                    缺陷类别: ${itemData.defectCategory}
-                    原因 (Reason): ${translatedReasons["zh"] ?: defectDetails.reason}
-                    模板 (Template): ${translatedTemplates["zh"] ?: defectDetails.template}
-                    描述: ${defectDetails.description}
-                """.trimIndent()
-                
-                // English content
-                val englishContent = """
-                    
-                    Article: ${itemData.fullArticleCode}
-                    Defect Category: ${itemData.defectCategory}
-                    Reason (原因): ${translatedReasons["en"] ?: defectDetails.reason}
-                    Template (模板): ${translatedTemplates["en"] ?: defectDetails.template}
-                    Description: ${defectDetails.description}
-                """.trimIndent()
-                
-                // Combine all languages
-                val fullContent = "$russianContent\n\n$chineseContent\n\n$englishContent"
-                
-                outputStream.write(fullContent.toByteArray())
-                outputStream.flush()
+            // Method 2: Use FileOutputStream if Method 1 failed
+            if (!success) {
+                try {
+                    FileOutputStream(file).use { fos ->
+                        fos.write(content.toByteArray(Charsets.UTF_8))
+                        fos.flush()
+                    }
+                    success = true
+                    Log.d(TAG, "[CONTENT] Method 2 (FileOutputStream) successful")
+                } catch (e: Exception) {
+                    Log.w(TAG, "[CONTENT] Method 2 (FileOutputStream) failed", e)
+                }
             }
-            Log.d(TAG, "Text file saved successfully: ${file.absolutePath}")
-            return true
-        } catch (e: IOException) {
-            Log.e(TAG, "Error writing text to file: ${file.absolutePath}", e)
-            return false
+            
+            // Method 3: Use FileWriter if both above failed  
+            if (!success) {
+                try {
+                    java.io.FileWriter(file, Charsets.UTF_8).use { writer ->
+                        writer.write(content)
+                        writer.flush()
+                    }
+                    success = true
+                    Log.d(TAG, "[CONTENT] Method 3 (FileWriter) successful")
+                } catch (e: Exception) {
+                    Log.w(TAG, "[CONTENT] Method 3 (FileWriter) failed", e)
+                }
+            }
+            
+            // Verify the file was created successfully
+            if (success && file.exists() && file.length() > 0) {
+                Log.d(TAG, "[CONTENT] File verification successful: ${file.absolutePath}, size: ${file.length()} bytes")
+                
+                // Try to read back first few characters to ensure file is readable
+                try {
+                    val firstChars = file.readText(Charsets.UTF_8).take(50)
+                    Log.d(TAG, "[CONTENT] Read verification: '$firstChars'")
+                } catch (e: Exception) {
+                    Log.w(TAG, "[CONTENT] Read verification failed, but file exists", e)
+                }
+                
+                return true
+            } else {
+                Log.e(TAG, "[CONTENT] File verification failed - success: $success, exists: ${file.exists()}, size: ${if(file.exists()) file.length() else "N/A"}")
+                return false
+            }
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "[CONTENT] Critical error in saveTextContentToFile", e)
+            false
         }
     }
     
@@ -631,5 +692,31 @@ object FileUtils {
         } catch (e: Exception) {
             false
         }
+    }
+    
+    /**
+     * Get the expected storage location information for the user
+     */
+    fun getStorageLocationInfo(context: Context): String {
+        val baseDir = getBaseDirectory(context)
+        return if (baseDir.exists()) {
+            "Файлы сохраняются в:\n${baseDir.absolutePath}\n\nДля просмотра используйте:\n• Встроенный файловый менеджер приложения\n• Любой файловый менеджер Android\n• Подключите устройство к компьютеру"
+        } else {
+            val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
+            "Основная папка недоступна.\nФайлы сохраняются в приватную папку:\n${fallbackDir?.absolutePath}/warehouse\n\nДля просмотра используйте встроенный файловый менеджер приложения."
+        }
+    }
+    
+    /**
+     * Check if text file exists for the given item
+     */
+    fun getTextFileForItem(
+        context: Context,
+        manufacturerInfo: ManufacturerInfo,
+        itemData: ItemData
+    ): File? {
+        val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData) ?: return null
+        val textFile = File(itemDir, "${itemData.fullArticleCode}.txt")
+        return if (textFile.exists()) textFile else null
     }
 }

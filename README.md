@@ -14,6 +14,9 @@ Warehouse Camera is a mobile application designed to simplify the process of doc
 - View taken photos through a built-in image viewer
 - Manage files through a built-in file manager
 - Synchronize receipt list with file system
+- **NEW: Support for built-in TSD (handheld terminal) scanners**
+- **NEW: Automatic photo orientation correction**
+- **NEW: Improved gallery management with MediaStore integration**
 
 ## Design Features
 
@@ -60,6 +63,24 @@ DCIM/warehouse/
 
 > **Note**: For Android 10 and above (API 29+), files are saved in the app's private folder: `Android/data/com.warehouse.camera/files/Pictures/warehouse/`
 
+## TSD Scanner Support
+
+The application now automatically detects TSD (Terminal for Data Collection) devices and provides native scanner support:
+
+### Supported TSD Devices:
+- **Ranger2K** (primary target)
+- iData series
+- Chainway series
+- Urovo series
+- Other TSD devices with standard broadcast APIs
+
+### Features:
+- Automatic TSD device detection
+- Hardware trigger button support
+- Switch between camera and built-in scanner
+- Optimized for professional warehouse environments
+- No additional configuration required
+
 ## Installation
 
 ### Requirements
@@ -83,7 +104,7 @@ DCIM/warehouse/
 3. Enter article information and select the defect category
 4. Fill in defect details, choosing the reason and template
 5. Take photos of damages and barcodes, selecting the criticality level (1-3)
-6. Save the information
+6. Save the information - **text annotations are now automatically saved**
 7. After completing work with the current article, return to the manufacturer information to continue working
 
 ### Additional Features
@@ -93,8 +114,9 @@ DCIM/warehouse/
 - **File management**: Navigation through the file system with the ability to view and delete files and folders
 - **Automatic summary file creation**: Generation of a list of all articles in the manufacturer folder
 - **Multilingual descriptions**: Support for Russian, English, and Chinese languages in text files
-- **Barcode scanning**: Quick article entry using the camera
+- **Barcode scanning**: Quick article entry using camera or TSD scanner
 - **Automatic orientation correction**: Correcting photo orientation using EXIF data
+- **Gallery integration**: Photos are properly managed in device gallery with automatic cleanup
 
 ## UI/UX Features
 
@@ -103,8 +125,17 @@ DCIM/warehouse/
 - **Smart colors**: Use of color indicators for statuses and defect categories
 - **Responsive buttons**: Buttons visually react to presses, providing feedback
 - **Photo viewing**: Convenient photo viewing with zoom capability through the file manager
+- **TSD optimization**: Interface optimized for handheld terminal usage
 
 ## New Features and Fixes
+
+### Version 1.2.0 (Latest)
+
+- **TSD Scanner Integration** - Native support for built-in scanners on TSD devices
+- **Automatic Device Detection** - App automatically detects TSD capabilities
+- **Hardware Trigger Support** - Use hardware scan buttons on TSD devices
+- **Improved Text Annotation Saving** - Automatic saving of defect details in multiple languages
+- **Enhanced Gallery Management** - Proper MediaStore integration for photo management
 
 ### Version 1.1.0
 
@@ -113,6 +144,35 @@ DCIM/warehouse/
 - **Receipt list synchronization** - the receipt list is now automatically synchronized with existing folders in the file system
 - **Improved photo viewing** - direct viewing of photos from the file manager with zoom capability
 - **Flash fix** - improved flash operation in photo mode
+
+## Development Notes
+
+### TSD Scanner API Usage
+```kotlin
+// Check if device is TSD
+if (ScannerUtils.isTSDDevice()) {
+    val config = ScannerUtils.getTSDDeviceConfig()
+    // Use TSD scanner
+} else {
+    // Use camera scanner
+}
+```
+
+### Photo Processing Pipeline
+```kotlin
+// Automatic orientation correction
+val correctedBitmap = ImageUtils.fixPhotoOrientation(photoPath)
+
+// Add defect category marker
+val markedBitmap = ImageUtils.addCircleMarker(correctedBitmap, color, categoryText)
+```
+
+### File System Synchronization
+```kotlin
+// Automatic sync with file system
+repository.synchronizeWithFileSystem()
+val receptions = repository.getAllReceptions()
+```
 
 ## License
 
@@ -136,6 +196,9 @@ Warehouse Camera - это мобильное приложение, разраб�
 - Просматривать сделанные фотографии через встроенный просмотрщик изображений
 - Управлять файлами через встроенный файловый менеджер
 - Синхронизировать список приёмок с файловой системой
+- **НОВОЕ: Поддержка встроенных сканеров ТСД (терминалов сбора данных)**
+- **НОВОЕ: Автоматическая коррекция ориентации фотографий**
+- **НОВОЕ: Улучшенное управление галереей с интеграцией MediaStore**
 
 ## Особенности дизайна
 
@@ -182,6 +245,24 @@ DCIM/warehouse/
 
 > **Примечание**: Для Android 10 и выше (API 29+), файлы сохраняются в приватной папке приложения: `Android/data/com.warehouse.camera/files/Pictures/warehouse/`
 
+## Поддержка сканеров ТСД
+
+Приложение теперь автоматически определяет устройства ТСД (терминалы сбора данных) и обеспечивает поддержку встроенных сканеров:
+
+### Поддерживаемые устройства ТСД:
+- **Ranger2K** (основная цель)
+- iData серии
+- Chainway серии
+- Urovo серии
+- Другие ТСД с стандартными broadcast API
+
+### Возможности:
+- Автоматическое определение ТСД устройств
+- Поддержка аппаратных кнопок сканирования
+- Переключение между камерой и встроенным сканером
+- Оптимизация для профессиональных складских условий
+- Не требует дополнительной настройки
+
 ## Установка
 
 ### Требования
@@ -205,7 +286,7 @@ DCIM/warehouse/
 3. Введите информацию об артикуле и выберите категорию дефекта
 4. Заполните детали дефекта, выбрав причину и шаблон
 5. Сделайте фотографии повреждений и штрихкодов, выбрав уровень критичности (1-3)
-6. Сохраните информацию
+6. Сохраните информацию - **текстовые аннотации теперь сохраняются автоматически**
 7. После завершения работы с текущим артикулом вернитесь к информации о производителе для продолжения работы
 
 ### Дополнительные функции
@@ -215,8 +296,9 @@ DCIM/warehouse/
 - **Управление файлами**: Навигация по файловой системе с возможностью просмотра, удаления файлов и папок
 - **Автоматическое создание сводных файлов**: Генерация списка всех артикулов в папке производителя
 - **Многоязычные описания**: Поддержка русского, английского и китайского языков в текстовых файлах
-- **Сканирование штрихкодов**: Быстрый ввод артикулов с помощью камеры
+- **Сканирование штрихкодов**: Быстрый ввод артикулов с помощью камеры или ТСД сканера
 - **Автоматическая коррекция ориентации**: Исправление ориентации фотографий с использованием данных EXIF
+- **Интеграция с галереей**: Правильное управление фотографиями в галерее с автоматической очисткой
 
 ## Особенности UI/UX
 
@@ -225,8 +307,17 @@ DCIM/warehouse/
 - **Умные цвета**: Использование цветовых индикаторов для статусов и категорий дефектов
 - **Отзывчивые кнопки**: Кнопки визуально реагируют на нажатия, обеспечивая обратную связь
 - **Просмотр фотографий**: Удобный просмотр фотографий с возможностью увеличения через файловый менеджер
+- **Оптимизация для ТСД**: Интерфейс оптимизирован для использования на портативных терминалах
 
 ## Новые функции и исправления
+
+### Версия 1.2.0 (Последняя)
+
+- **Интеграция сканеров ТСД** - Нативная поддержка встроенных сканеров на ТСД устройствах
+- **Автоматическое определение устройства** - Приложение автоматически определяет возможности ТСД
+- **Поддержка аппаратных кнопок** - Использование аппаратных кнопок сканирования на ТСД устройствах
+- **Улучшенное сохранение текстовых аннотаций** - Автоматическое сохранение данных о дефектах на нескольких языках
+- **Улучшенное управление галереей** - Правильная интеграция MediaStore для управления фотографиями
 
 ### Версия 1.1.0
 

@@ -14,6 +14,7 @@ import com.warehouse.camera.ui.reception.ReceptionSelectionActivity
 import com.warehouse.camera.ui.gallery.GalleryBrowserActivity
 import com.warehouse.camera.utils.LanguageUtils
 import com.warehouse.camera.utils.PermissionUtils
+import com.warehouse.camera.utils.FileUtils
 
 class MainActivity : BaseActivity() {
     
@@ -128,6 +129,10 @@ class MainActivity : BaseActivity() {
                 overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
                 true
             }
+            R.id.menu_storage_info -> {
+                showStorageInfoDialog()
+                true
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -150,6 +155,21 @@ class MainActivity : BaseActivity() {
                 }
                 LanguageUtils.setLanguage(this, language)
                 updateUIAfterLanguageChange()
+            }
+            .show()
+    }
+    
+    private fun showStorageInfoDialog() {
+        val storageInfo = FileUtils.getStorageLocationInfo(this)
+        
+        AlertDialog.Builder(this)
+            .setTitle("Местоположение файлов")
+            .setMessage(storageInfo)
+            .setPositiveButton("ОК") { dialog, _ -> dialog.dismiss() }
+            .setNeutralButton("Открыть файловый менеджер") { _, _ ->
+                val intent = Intent(this, FileStructureActivity::class.java)
+                startActivity(intent)
+                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)
             }
             .show()
     }

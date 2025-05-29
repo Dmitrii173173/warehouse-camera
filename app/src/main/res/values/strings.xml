@@ -13,6 +13,7 @@
     <string name="language_chinese">ZH</string>
     <string name="menu_gallery">Gallery</string>
     <string name="menu_help">Instructions</string>
+    <string name="storage_location">Storage Location</string>
     <string name="back">Back</string>
     <string name="preview">Preview</string>
     <string name="take_photo">Take Photo</string>
@@ -191,4 +192,8 @@ You can transfer these files to your computer using a USB cable or view them dir
     <string name="cancel">Cancel</string>
     <string name="delete_success">Successfully deleted</string>
     <string name="delete_error">Error while deleting</string>
+    
+    <!-- Text annotations -->
+    <string name="photo_and_annotation_saved">Photo and text annotations saved successfully!</string>
+    <string name="photo_saved_annotation_failed">Photo saved, but failed to save text annotations</string>
 </resources>
