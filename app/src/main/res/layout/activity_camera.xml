@@ -95,6 +95,37 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- Zoom controls -->
+        <LinearLayout
+            android:id="@+id/zoom_container"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="16dp"
+            android:background="#80000000"
+            android:orientation="vertical"
+            android:padding="8dp">
+            
+            <TextView
+                android:id="@+id/zoom_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="1.0x"
+                android:textColor="@color/white"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+                
+            <SeekBar
+                android:id="@+id/zoom_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="0"
+                android:progressTint="@color/white"
+                android:thumbTint="@color/white" />
+        </LinearLayout>
+
         <FrameLayout
             android:id="@+id/flash_button_container"
             android:layout_width="56dp"

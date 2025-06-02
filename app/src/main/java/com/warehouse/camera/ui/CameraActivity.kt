@@ -25,6 +25,8 @@ import androidx.camera.core.*
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.core.content.ContextCompat
+import android.widget.SeekBar
+import android.view.ScaleGestureDetector
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.warehouse.camera.R
 import com.warehouse.camera.model.ArticleInfo
@@ -52,12 +54,13 @@ class CameraActivity : BaseActivity() {
     private lateinit var usePhotoButton: Button
     private lateinit var addMoreButton: Button
     private lateinit var photoCountText: TextView
-    private lateinit var backButton: ImageButton
     private lateinit var backPreviewButton: ImageButton
     private lateinit var normalPhotoSwitch: Switch
     private lateinit var flashButton: ImageButton
     private lateinit var processingIndicator: FrameLayout
     private lateinit var processingText: TextView
+    private lateinit var zoomSeekBar: SeekBar
+    private lateinit var zoomText: TextView
     
     // Radio buttons for the color circles
     private lateinit var radioGroupCircles: RadioGroup
@@ -88,6 +91,12 @@ class CameraActivity : BaseActivity() {
     // Variables to store temporary photo data during processing
     private var tempPhotoPath: String? = null
     private var isProcessingPhoto = false
+    
+    // Zoom variables
+    private var currentZoomRatio = 1.0f
+    private var maxZoomRatio = 1.0f
+    private var minZoomRatio = 1.0f
+    private lateinit var scaleGestureDetector: ScaleGestureDetector
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -141,12 +150,13 @@ class CameraActivity : BaseActivity() {
         usePhotoButton = findViewById(R.id.button_use_photo)
         addMoreButton = findViewById(R.id.button_add_more_photos)
         photoCountText = findViewById(R.id.photo_count_text)
-        backButton = findViewById(R.id.button_back)
         backPreviewButton = findViewById(R.id.button_back_preview)
         normalPhotoSwitch = findViewById(R.id.switch_normal_photo)
         flashButton = findViewById(R.id.button_flash)
         processingIndicator = findViewById(R.id.processing_indicator)
         processingText = findViewById(R.id.processing_text)
+        zoomSeekBar = findViewById(R.id.zoom_seekbar)
+        zoomText = findViewById(R.id.zoom_text)
         
         // Update photo count display
         updatePhotoCountDisplay()
@@ -207,7 +217,6 @@ class CameraActivity : BaseActivity() {
         retakeButton.setOnClickListener { retakePhoto() }
         usePhotoButton.setOnClickListener { usePhoto() }
         addMoreButton.setOnClickListener { addMorePhotos() }
-        backButton.setOnClickListener { onBackPressed() }
         backPreviewButton.setOnClickListener { retakePhoto() }
         normalPhotoSwitch.setOnCheckedChangeListener { _, isChecked ->
             normalPhotoMode = isChecked
@@ -218,13 +227,30 @@ class CameraActivity : BaseActivity() {
             toggleFlash()
         }
         
-        // Set up touch listener for focus
+        // Initialize scale gesture detector for pinch-to-zoom
+        scaleGestureDetector = ScaleGestureDetector(this, object : ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            override fun onScale(detector: ScaleGestureDetector): Boolean {
+                val scaleFactor = detector.scaleFactor
+                val newZoomRatio = currentZoomRatio * scaleFactor
+                setZoom(newZoomRatio)
+                
+                // Update seekbar position
+                val progress = ((currentZoomRatio - minZoomRatio) / (maxZoomRatio - minZoomRatio) * 100).toInt()
+                zoomSeekBar.progress = progress
+                
+                return true
+            }
+        })
+        
+        // Set up touch listener for focus and zoom
         viewFinder.setOnTouchListener { _, event ->
-            if (event.action == MotionEvent.ACTION_DOWN) {
+            scaleGestureDetector.onTouchEvent(event)
+            
+            if (event.action == MotionEvent.ACTION_DOWN && !scaleGestureDetector.isInProgress) {
                 focusOnPoint(event.x, event.y)
                 return@setOnTouchListener true
             }
-            return@setOnTouchListener false
+            return@setOnTouchListener true
         }
         
         cameraExecutor = Executors.newSingleThreadExecutor()
@@ -252,10 +278,10 @@ class CameraActivity : BaseActivity() {
                     it.setSurfaceProvider(viewFinder.surfaceProvider)
                 }
             
-            // Image capture with optimized settings for speed
+            // Image capture with high quality settings
             imageCapture = ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY) // Changed for speed
-                .setJpegQuality(85) // Slightly reduce quality for faster processing
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY) // Changed for quality
+                .setJpegQuality(95) // High quality JPEG
                 .build()
             
             // Select back camera as a default
@@ -270,11 +296,67 @@ class CameraActivity : BaseActivity() {
                     this, cameraSelector, preview, imageCapture
                 )
                 
+                // Initialize zoom after camera binding
+                initializeZoom()
+                
             } catch (exc: Exception) {
                 Log.e(TAG, "Use case binding failed", exc)
             }
             
         }, ContextCompat.getMainExecutor(this))
+    }
+    
+    /**
+     * Initialize zoom functionality
+     */
+    private fun initializeZoom() {
+        val camera = camera ?: return
+        
+        val cameraInfo = camera.cameraInfo
+        val zoomState = cameraInfo.zoomState.value
+        
+        if (zoomState != null) {
+            minZoomRatio = zoomState.minZoomRatio
+            maxZoomRatio = zoomState.maxZoomRatio
+            currentZoomRatio = zoomState.zoomRatio
+            
+            // Setup zoom seekbar
+            zoomSeekBar.max = 100
+            zoomSeekBar.progress = 0
+            updateZoomText()
+            
+            // Set zoom seekbar listener
+            zoomSeekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                    if (fromUser) {
+                        val zoomRatio = minZoomRatio + (progress / 100f) * (maxZoomRatio - minZoomRatio)
+                        setZoom(zoomRatio)
+                    }
+                }
+                
+                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+                override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+            })
+            
+            Log.d(TAG, "Zoom initialized: min=$minZoomRatio, max=$maxZoomRatio, current=$currentZoomRatio")
+        }
+    }
+    
+    /**
+     * Set zoom ratio
+     */
+    private fun setZoom(zoomRatio: Float) {
+        val camera = camera ?: return
+        currentZoomRatio = zoomRatio.coerceIn(minZoomRatio, maxZoomRatio)
+        camera.cameraControl.setZoomRatio(currentZoomRatio)
+        updateZoomText()
+    }
+    
+    /**
+     * Update zoom text display
+     */
+    private fun updateZoomText() {
+        zoomText.text = String.format("%.1fx", currentZoomRatio)
     }
     
     private fun takePhoto() {

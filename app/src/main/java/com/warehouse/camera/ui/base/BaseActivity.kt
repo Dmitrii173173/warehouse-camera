@@ -13,8 +13,12 @@ import com.warehouse.camera.utils.LanguageUtils
 /**
  * Base activity class that automatically applies the selected language and animations
  * All activities should extend this class instead of AppCompatActivity
+ * Provides automatic back button support for all activities
  */
 open class BaseActivity : AppCompatActivity() {
+    
+    // Back button reference
+    protected var backButton: android.widget.ImageButton? = null
     
     override fun attachBaseContext(newBase: Context) {
         // Apply selected language before the activity's view is created
@@ -27,6 +31,57 @@ open class BaseActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         // Lock screen orientation to portrait
         requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    }
+    
+    override fun setContentView(layoutResID: Int) {
+        super.setContentView(layoutResID)
+        // Automatically setup back button if it exists in the layout
+        setupBackButton()
+    }
+    
+    override fun setContentView(view: android.view.View?) {
+        super.setContentView(view)
+        // Automatically setup back button if it exists in the layout
+        setupBackButton()
+    }
+    
+    /**
+     * Automatically find and setup back button in the layout
+     */
+    protected open fun setupBackButton() {
+        // Try to find common back button IDs
+        val backButtonIds = arrayOf(
+            R.id.button_back
+        )
+        
+        for (id in backButtonIds) {
+            try {
+                val button = findViewById<android.widget.ImageButton>(id)
+                if (button != null) {
+                    backButton = button
+                    setupBackButtonClickListener(button)
+                    break
+                }
+            } catch (e: Exception) {
+                // ID not found, continue
+            }
+        }
+    }
+    
+    /**
+     * Setup click listener for back button
+     */
+    protected open fun setupBackButtonClickListener(button: android.widget.ImageButton) {
+        button.setOnClickListener {
+            onBackButtonPressed()
+        }
+    }
+    
+    /**
+     * Handle back button click - can be overridden by subclasses
+     */
+    protected open fun onBackButtonPressed() {
+        onBackPressed()
     }
     
     override fun onResume() {
