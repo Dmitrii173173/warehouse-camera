@@ -4,10 +4,17 @@
 
     <uses-feature android:name="android.hardware.camera" android:required="true" />
     <uses-permission android:name="android.permission.CAMERA" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    
+    <!-- Разрешения для файлов (улучшенная поддержка всех версий Android) -->
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" 
+        android:maxSdkVersion="28" />
     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" 
         android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    
+    <!-- Android 11+ разрешения для управления файлами -->
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" 
+        tools:ignore="ScopedStorage" />
     
     <!-- ТСД сканер разрешения -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
@@ -45,6 +52,13 @@
         <activity android:name=".ui.help.HelpActivity" android:screenOrientation="portrait" />
         <activity android:name=".ui.FileStructureActivity" android:screenOrientation="portrait" />
         <activity android:name=".ui.scanner.BarcodeScannerActivity" android:screenOrientation="portrait" />
+        
+        <!-- Диагностическая активность для отладки проблем с файлами -->
+        <activity 
+            android:name=".activity.DiagnosticActivity" 
+            android:screenOrientation="portrait"
+            android:label="File System Diagnostic"
+            android:exported="false" />
         
         <provider
             android:name="androidx.core.content.FileProvider"

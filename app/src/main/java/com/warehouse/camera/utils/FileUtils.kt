@@ -1,9 +1,9 @@
 package com.warehouse.camera.utils
 
+import android.content.ContentResolver
 import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
@@ -15,17 +15,298 @@ import com.warehouse.camera.model.DefectDetails
 import com.warehouse.camera.model.ItemData
 import com.warehouse.camera.model.ManufacturerInfo
 import com.warehouse.camera.model.project.ProductReception
-import com.warehouse.camera.utils.PermissionUtils
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import java.text.SimpleDateFormat
 import java.util.*
 
 object FileUtils {
     private const val BASE_DIRECTORY = "warehouse"
     private const val TAG = "FileUtils"
+    
+    // Кэш для лучшего пути сохранения файлов
+    private var cachedBestPath: String? = null
+    private var diagnostic: FileSystemDiagnostic? = null
+    
+    /**
+     * Инициализация FileUtils с диагностикой файловой системы
+     */
+    fun initialize(context: Context) {
+        diagnostic = FileSystemDiagnostic(context)
+        val diagResult = diagnostic!!.runFullDiagnostic()
+        cachedBestPath = diagnostic!!.getBestSavePath()
+        
+        Log.d(TAG, "FileUtils initialized with best path: $cachedBestPath")
+        diagResult.recommendations.forEach { recommendation ->
+            Log.i(TAG, "Recommendation: $recommendation")
+        }
+    }
+    
+    /**
+     * Получить базовую директорию для хранения файлов приложения с учетом совместимости
+     */
+    fun getBaseDirectory(context: Context): File {
+        // Если диагностика не была запущена, запустить её
+        if (diagnostic == null) {
+            initialize(context)
+        }
+        
+        val bestPath = cachedBestPath ?: run {
+            // Fallback на приватную папку приложения
+            context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)?.absolutePath + "/warehouse"
+        }
+        
+        val directory = File(bestPath)
+        
+        // Попытка создать директорию
+        if (!directory.exists()) {
+            val success = directory.mkdirs()
+            Log.d(TAG, "Creating base directory: ${directory.absolutePath}, success: $success")
+            
+            if (!success && !directory.exists()) {
+                Log.e(TAG, "Failed to create preferred directory, using fallback")
+                // Fallback на гарантированно доступную приватную папку
+                val fallbackDir = File(context.getExternalFilesDir(Environment.DIRECTORY_PICTURES), BASE_DIRECTORY)
+                fallbackDir.mkdirs()
+                return fallbackDir
+            }
+        }
+        
+        Log.d(TAG, "Using base directory: ${directory.absolutePath}")
+        return directory
+    }
+    
+    /**
+     * Улучшенный метод сохранения текстового файла с множественными fallback опциями
+     */
+    fun saveTextFile(
+        context: Context,
+        manufacturerInfo: ManufacturerInfo,
+        articleInfo: ArticleInfo,
+        defectDetails: DefectDetails,
+        itemData: ItemData
+    ): Boolean {
+        return try {
+            Log.i(TAG, "=== SAVING TEXT FILE ===")
+            Log.d(TAG, "Article: ${itemData.fullArticleCode}")
+            Log.d(TAG, "Manufacturer: ${manufacturerInfo.manufacturerCode}")
+            Log.d(TAG, "Device: ${Build.MANUFACTURER} ${Build.MODEL} (API ${Build.VERSION.SDK_INT})")
+            
+            // Проверить разрешения
+            if (!PermissionUtils.hasStoragePermission(context)) {
+                Log.e(TAG, "❌ No storage permission")
+                return false
+            }
+            
+            // Подготовить контент файла
+            val content = prepareTextContent(itemData, defectDetails)
+            val fileName = "${itemData.fullArticleCode}.txt"
+            
+            // Попробовать несколько методов сохранения по приоритету
+            val saveMethods = listOf(
+                { saveToStructuredDirectory(context, manufacturerInfo, itemData, fileName, content) },
+                { saveToPrivateDirectory(context, manufacturerInfo, itemData, fileName, content) },
+                { saveToMediaStore(context, fileName, content) },
+                { saveToDownloads(context, fileName, content) }
+            )
+            
+            for ((index, saveMethod) in saveMethods.withIndex()) {
+                try {
+                    val result = saveMethod()
+                    if (result) {
+                        Log.i(TAG, "✅ Successfully saved using method ${index + 1}")
+                        return true
+                    }
+                } catch (e: Exception) {
+                    Log.w(TAG, "⚠️ Save method ${index + 1} failed: ${e.message}")
+                }
+            }
+            
+            Log.e(TAG, "❌ All save methods failed")
+            false
+            
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Critical error in saveTextFile", e)
+            false
+        }
+    }
+    
+    /**
+     * Метод 1: Сохранение в структурированную директорию (как раньше)
+     */
+    private fun saveToStructuredDirectory(
+        context: Context,
+        manufacturerInfo: ManufacturerInfo,
+        itemData: ItemData,
+        fileName: String,
+        content: String
+    ): Boolean {
+        val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData) ?: return false
+        val textFile = File(itemDir, fileName)
+        
+        return saveContentToFile(textFile, content, "Structured Directory")
+    }
+    
+    /**
+     * Метод 2: Сохранение в приватную папку приложения (гарантированно работает)
+     */
+    private fun saveToPrivateDirectory(
+        context: Context,
+        manufacturerInfo: ManufacturerInfo,
+        itemData: ItemData,
+        fileName: String,
+        content: String
+    ): Boolean {
+        val privateDir = context.getExternalFilesDir(null) ?: context.filesDir
+        val warehouseDir = File(privateDir, "warehouse/${manufacturerInfo.manufacturerCode}/${manufacturerInfo.date}/${itemData.defectCategory}")
+        
+        if (!warehouseDir.exists() && !warehouseDir.mkdirs()) {
+            return false
+        }
+        
+        val textFile = File(warehouseDir, fileName)
+        return saveContentToFile(textFile, content, "Private Directory")
+    }
+    
+    /**
+     * Метод 3: Сохранение через MediaStore (для Android 10+)
+     */
+    private fun saveToMediaStore(context: Context, fileName: String, content: String): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            return false
+        }
+        
+        return try {
+            val resolver = context.contentResolver
+            val contentValues = ContentValues().apply {
+                put(MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                put(MediaStore.MediaColumns.MIME_TYPE, "text/plain")
+                put(MediaStore.MediaColumns.RELATIVE_PATH, "Documents/warehouse")
+            }
+            
+            val uri = resolver.insert(MediaStore.Files.getContentUri("external"), contentValues)
+            if (uri != null) {
+                resolver.openOutputStream(uri)?.use { outputStream ->
+                    outputStream.write(content.toByteArray(Charsets.UTF_8))
+                    outputStream.flush()
+                }
+                Log.d(TAG, "✅ Saved via MediaStore: $uri")
+                true
+            } else {
+                false
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "MediaStore save failed", e)
+            false
+        }
+    }
+    
+    /**
+     * Метод 4: Сохранение в папку Downloads (последний резерв)
+     */
+    private fun saveToDownloads(context: Context, fileName: String, content: String): Boolean {
+        return try {
+            val downloadsDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
+            val warehouseDir = File(downloadsDir, "warehouse")
+            
+            if (!warehouseDir.exists() && !warehouseDir.mkdirs()) {
+                return false
+            }
+            
+            val textFile = File(warehouseDir, fileName)
+            saveContentToFile(textFile, content, "Downloads Directory")
+        } catch (e: Exception) {
+            Log.w(TAG, "Downloads save failed", e)
+            false
+        }
+    }
+    
+    /**
+     * Универсальный метод сохранения контента в файл
+     */
+    private fun saveContentToFile(file: File, content: String, method: String): Boolean {
+        return try {
+            // Убедиться что папка существует
+            file.parentFile?.mkdirs()
+            
+            // Попробовать различные способы записи
+            var success = false
+            
+            // Способ 1: writeText
+            try {
+                file.writeText(content, Charsets.UTF_8)
+                success = true
+            } catch (e: Exception) {
+                Log.w(TAG, "$method - writeText failed", e)
+            }
+            
+            // Способ 2: FileOutputStream
+            if (!success) {
+                try {
+                    FileOutputStream(file).use { fos ->
+                        fos.write(content.toByteArray(Charsets.UTF_8))
+                        fos.flush()
+                    }
+                    success = true
+                } catch (e: Exception) {
+                    Log.w(TAG, "$method - FileOutputStream failed", e)
+                }
+            }
+            
+            // Проверка успеха
+            if (success && file.exists() && file.length() > 0) {
+                Log.d(TAG, "✅ $method successful: ${file.absolutePath} (${file.length()} bytes)")
+                return true
+            } else {
+                Log.w(TAG, "❌ $method verification failed")
+                return false
+            }
+            
+        } catch (e: Exception) {
+            Log.w(TAG, "$method critical error", e)
+            false
+        }
+    }
+    
+    /**
+     * Подготовка контента текстового файла
+     */
+    private fun prepareTextContent(itemData: ItemData, defectDetails: DefectDetails): String {
+        val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(Date())
+        
+        return buildString {
+            appendLine("WAREHOUSE DOCUMENTATION")
+            appendLine("========================")
+            appendLine("")
+            appendLine("Article Code: ${itemData.fullArticleCode}")
+            appendLine("Defect Category: ${itemData.defectCategory}")
+            appendLine("Reason: ${defectDetails.reason}")
+            appendLine("Template: ${defectDetails.template}")
+            appendLine("Description: ${defectDetails.description}")
+            appendLine("Created: $timestamp")
+            appendLine("")
+            appendLine("РУССКИЙ")
+            appendLine("========")
+            appendLine("Артикул: ${itemData.fullArticleCode}")
+            appendLine("Категория: ${itemData.defectCategory}")
+            appendLine("Причина: ${defectDetails.reason}")
+            appendLine("Шаблон: ${defectDetails.template}")
+            appendLine("Описание: ${defectDetails.description}")
+            appendLine("Создано: $timestamp")
+            appendLine("")
+            appendLine("中文")
+            appendLine("====")
+            appendLine("物品编号: ${itemData.fullArticleCode}")
+            appendLine("缺陷类别: ${itemData.defectCategory}")
+            appendLine("原因: ${defectDetails.reason}")
+            appendLine("模板: ${defectDetails.template}")
+            appendLine("描述: ${defectDetails.description}")
+            appendLine("创建时间: $timestamp")
+        }
+    }
     
     /**
      * Deletes a file or directory recursively and removes entries from MediaStore
@@ -64,37 +345,28 @@ object FileUtils {
      */
     private fun removeImageFromGallery(context: Context, file: File) {
         try {
-            // Get the content resolver
             val contentResolver = context.contentResolver
             
-            // Create a selection for the file path
             val selection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // For Android 10+, we need to use relative path
-                "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?" // Only works for photos in standard directories
+                "${MediaStore.MediaColumns.RELATIVE_PATH} LIKE ?"
             } else {
-                // For older versions, use the absolute path
                 "${MediaStore.MediaColumns.DATA} = ?"
             }
             
-            // Selection argument depends on Android version
             val selectionArgs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                // For Android 10+, extract the relative path
                 val path = file.absolutePath
                 val dcimPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).absolutePath
                 val relativePath = if (path.startsWith(dcimPath)) {
                     val pathAfterDcim = path.substring(dcimPath.length + 1)
                     "DCIM/${pathAfterDcim.substringBeforeLast('/')}"
                 } else {
-                    // If not in DCIM, use a wildcard
                     "%${file.parent?.substringAfterLast('/') ?: ""}%"
                 }
                 arrayOf(relativePath)
             } else {
-                // For older versions, use the absolute path
                 arrayOf(file.absolutePath)
             }
             
-            // Try to delete from MediaStore
             val deletedRows = contentResolver.delete(
                 MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                 selection,
@@ -105,33 +377,6 @@ object FileUtils {
         } catch (e: Exception) {
             Log.e(TAG, "Error removing image from gallery", e)
         }
-    }
-    
-    // Получить базовую директорию для хранения файлов приложения
-    fun getBaseDirectory(context: Context): File {
-        // Always use the public DCIM directory
-        val directory = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM), BASE_DIRECTORY)
-        
-        // Create directory if it doesn't exist
-        if (!directory.exists()) {
-            if (PermissionUtils.hasStoragePermission(context)) {
-                val success = directory.mkdirs()
-                Log.d(TAG, "Creating directory: ${directory.absolutePath}, success: $success")
-                
-                // Ensure directory exists after creation attempt
-                if (!success && !directory.exists()) {
-                    Log.e(TAG, "Failed to create directory despite having permissions")
-                }
-            } else {
-                Log.e(TAG, "Storage permission denied, cannot create directory")
-                // Request permissions if they're not granted
-                PermissionUtils.requestStoragePermission(context)
-            }
-        }
-        
-        // Log directory path
-        Log.d(TAG, "Base directory path: ${directory.absolutePath}")
-        return directory
     }
     
     // Получить директорию для проекта приёмки
@@ -182,7 +427,7 @@ object FileUtils {
                 if (!success && !baseDir.exists()) {
                     Log.e(TAG, "Failed to create base directory: ${baseDir.absolutePath}")
                     
-                    // In case of failure, attempt to create a fallback directory within app's private storage
+                    // Fallback to private directory
                     val fallbackDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
                     if (fallbackDir != null) {
                         Log.d(TAG, "Using fallback directory: ${fallbackDir.absolutePath}")
@@ -239,7 +484,6 @@ object FileUtils {
             val success = directory.mkdirs()
             Log.d(TAG, "Creating directory: ${directory.absolutePath}, success: $success")
             
-            // Double-check if directory exists after creation attempt
             if (!success && !directory.exists()) {
                 Log.e(TAG, "Failed to create directory: ${directory.absolutePath}")
                 return false
@@ -276,21 +520,18 @@ object FileUtils {
             }
             
             val prefix = if (isBoxPhoto) "damage" else "barcode"
-            
-            // Create a unique filename based on whether this is a multiple photo or not
             val imageFileName = if (photoIndex != null) {
                 "$prefix-${itemData.fullArticleCode}-$photoIndex.jpg"
             } else {
                 "$prefix-${itemData.fullArticleCode}.jpg"
             }
             
-            // Make sure parent directory exists and is writable
             if (!itemDir.exists()) {
                 val success = itemDir.mkdirs()
                 if (!success) {
                     Log.e(TAG, "Failed to create directory: ${itemDir.absolutePath}")
                     
-                    // Fallback to app's private directory if public directory creation fails
+                    // Fallback to app's private directory
                     val privateDir = context.getExternalFilesDir(Environment.DIRECTORY_PICTURES)
                     val privateItemDir = File(privateDir, "${manufacturerInfo.manufacturerCode}/${manufacturerInfo.date}/${itemData.defectCategory}/${itemData.fullArticleCode}")
                     privateItemDir.mkdirs()
@@ -302,20 +543,16 @@ object FileUtils {
             
             val imageFile = File(itemDir, imageFileName)
             
-            // If file already exists, delete it
             if (imageFile.exists()) {
                 imageFile.delete()
             }
             
-            // Create an empty file to ensure it exists
             val created = imageFile.createNewFile()
             if (!created) {
                 Log.e(TAG, "Failed to create new image file: ${imageFile.absolutePath}")
                 
-                // Try to make parent directories again
                 itemDir.mkdirs()
                 
-                // Try creating the file again
                 if (!imageFile.createNewFile()) {
                     Log.e(TAG, "Second attempt to create image file failed")
                     return null
@@ -350,7 +587,6 @@ object FileUtils {
         return try {
             val file = File(filePath)
             
-            // Ensure the parent directory exists
             val parentDir = file.parentFile
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs()
@@ -371,7 +607,6 @@ object FileUtils {
     // Save a copy of an image file to a new location
     fun copyImageFile(sourceFile: File, destFile: File): Boolean {
         return try {
-            // Ensure the parent directory exists
             val parentDir = destFile.parentFile
             if (parentDir != null && !parentDir.exists()) {
                 parentDir.mkdirs()
@@ -405,178 +640,6 @@ object FileUtils {
             context.packageName + ".fileprovider",
             file
         )
-    }
-    
-    // Improved method to save text file with defect information - PROPER VERSION
-    fun saveTextFile(
-        context: Context,
-        manufacturerInfo: ManufacturerInfo,
-        articleInfo: ArticleInfo,
-        defectDetails: DefectDetails,
-        itemData: ItemData
-    ): Boolean {
-        return try {
-            Log.d(TAG, "[SAVE] Starting to save text file for article: ${itemData.fullArticleCode}")
-            Log.d(TAG, "[SAVE] Manufacturer: ${manufacturerInfo.manufacturerCode}, Date: ${manufacturerInfo.date}")
-            Log.d(TAG, "[SAVE] Defect Category: ${itemData.defectCategory}")
-            
-            // Check storage permissions first
-            if (!PermissionUtils.hasStoragePermission(context)) {
-                Log.e(TAG, "[SAVE] No storage permission - requesting permissions")
-                PermissionUtils.requestStoragePermission(context)
-                return false
-            }
-            
-            // Create the same directory structure as photos
-            val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData)
-            if (itemDir == null) {
-                Log.e(TAG, "[SAVE] Failed to create directory structure")
-                
-                // Try fallback to app's private directory
-                Log.d(TAG, "[SAVE] Trying fallback to app private directory")
-                val privateDir = context.getExternalFilesDir(Environment.DIRECTORY_DOCUMENTS)
-                if (privateDir != null) {
-                    val fallbackDir = File(privateDir, "warehouse/${manufacturerInfo.manufacturerCode}/${manufacturerInfo.date}/${itemData.defectCategory}")
-                    if (fallbackDir.mkdirs() || fallbackDir.exists()) {
-                        val textFileName = "${itemData.fullArticleCode}.txt"
-                        val textFile = File(fallbackDir, textFileName)
-                        Log.d(TAG, "[SAVE] Using fallback directory: ${textFile.absolutePath}")
-                        return saveTextContentToFile(textFile, itemData, defectDetails)
-                    }
-                }
-                return false
-            }
-            
-            // Create text file in the same directory as photos
-            val textFileName = "${itemData.fullArticleCode}.txt"
-            val textFile = File(itemDir, textFileName)
-            
-            Log.d(TAG, "[SAVE] Target file: ${textFile.absolutePath}")
-            
-            // If file exists, delete it first
-            if (textFile.exists()) {
-                textFile.delete()
-                Log.d(TAG, "[SAVE] Deleted existing file")
-            }
-            
-            val result = saveTextContentToFile(textFile, itemData, defectDetails)
-            
-            Log.d(TAG, "[SAVE] Final result: $result")
-            return result
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "[SAVE] Exception in saveTextFile", e)
-            false
-        }
-    }
-    
-    // Ultra simple and reliable method to save text content to file
-    private fun saveTextContentToFile(file: File, itemData: ItemData, defectDetails: DefectDetails): Boolean {
-        return try {
-            Log.d(TAG, "[CONTENT] Preparing content for file: ${file.absolutePath}")
-            
-            // Validate input data
-            if (itemData.fullArticleCode.isBlank()) {
-                Log.e(TAG, "[CONTENT] Cannot save - article code is blank")
-                return false
-            }
-            
-            // Create simple, clean text content
-            val timestamp = java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())
-            val content = buildString {
-                appendLine("WAREHOUSE DOCUMENTATION")
-                appendLine("========================")
-                appendLine("")
-                appendLine("Article Code: ${itemData.fullArticleCode}")
-                appendLine("Defect Category: ${itemData.defectCategory}")
-                appendLine("Reason: ${defectDetails.reason}")
-                appendLine("Template: ${defectDetails.template}")
-                appendLine("Description: ${defectDetails.description}")
-                appendLine("Created: $timestamp")
-                appendLine("")
-                appendLine("РУССКИЙ")
-                appendLine("========")
-                appendLine("Артикул: ${itemData.fullArticleCode}")
-                appendLine("Категория: ${itemData.defectCategory}")
-                appendLine("Причина: ${defectDetails.reason}")
-                appendLine("Шаблон: ${defectDetails.template}")
-                appendLine("Описание: ${defectDetails.description}")
-                appendLine("Создано: $timestamp")
-                appendLine("")
-                appendLine("中文")
-                appendLine("====")
-                appendLine("物品编号: ${itemData.fullArticleCode}")
-                appendLine("缺陷类别: ${itemData.defectCategory}")
-                appendLine("原因: ${defectDetails.reason}")
-                appendLine("模板: ${defectDetails.template}")
-                appendLine("描述: ${defectDetails.description}")
-                appendLine("创建: $timestamp")
-            }
-            
-            Log.d(TAG, "[CONTENT] Content prepared, length: ${content.length} characters")
-            
-            // Try multiple approaches to write the file
-            var success = false
-            
-            // Method 1: Use writeText (most reliable)
-            try {
-                file.writeText(content, Charsets.UTF_8)
-                success = true
-                Log.d(TAG, "[CONTENT] Method 1 (writeText) successful")
-            } catch (e: Exception) {
-                Log.w(TAG, "[CONTENT] Method 1 (writeText) failed", e)
-            }
-            
-            // Method 2: Use FileOutputStream if Method 1 failed
-            if (!success) {
-                try {
-                    FileOutputStream(file).use { fos ->
-                        fos.write(content.toByteArray(Charsets.UTF_8))
-                        fos.flush()
-                    }
-                    success = true
-                    Log.d(TAG, "[CONTENT] Method 2 (FileOutputStream) successful")
-                } catch (e: Exception) {
-                    Log.w(TAG, "[CONTENT] Method 2 (FileOutputStream) failed", e)
-                }
-            }
-            
-            // Method 3: Use FileWriter if both above failed  
-            if (!success) {
-                try {
-                    java.io.FileWriter(file, Charsets.UTF_8).use { writer ->
-                        writer.write(content)
-                        writer.flush()
-                    }
-                    success = true
-                    Log.d(TAG, "[CONTENT] Method 3 (FileWriter) successful")
-                } catch (e: Exception) {
-                    Log.w(TAG, "[CONTENT] Method 3 (FileWriter) failed", e)
-                }
-            }
-            
-            // Verify the file was created successfully
-            if (success && file.exists() && file.length() > 0) {
-                Log.d(TAG, "[CONTENT] File verification successful: ${file.absolutePath}, size: ${file.length()} bytes")
-                
-                // Try to read back first few characters to ensure file is readable
-                try {
-                    val firstChars = file.readText(Charsets.UTF_8).take(50)
-                    Log.d(TAG, "[CONTENT] Read verification: '$firstChars'")
-                } catch (e: Exception) {
-                    Log.w(TAG, "[CONTENT] Read verification failed, but file exists", e)
-                }
-                
-                return true
-            } else {
-                Log.e(TAG, "[CONTENT] File verification failed - success: $success, exists: ${file.exists()}, size: ${if(file.exists()) file.length() else "N/A"}")
-                return false
-            }
-            
-        } catch (e: Exception) {
-            Log.e(TAG, "[CONTENT] Critical error in saveTextContentToFile", e)
-            false
-        }
     }
     
     // Check if the file structure for an item exists
@@ -621,10 +684,6 @@ object FileUtils {
     
     /**
      * Creates or updates a summary file for a manufacturer folder
-     * The file will list all articles found in date subfolders
-     * 
-     * @param manufacturerFolder The manufacturer folder
-     * @return True if successful, false otherwise
      */
     fun createManufacturerSummaryFile(manufacturerFolder: File): Boolean {
         if (!manufacturerFolder.exists() || !manufacturerFolder.isDirectory) {
@@ -633,39 +692,31 @@ object FileUtils {
         }
         
         try {
-            // Get all date folders
             val dateFolders = manufacturerFolder.listFiles { file -> 
                 file.isDirectory && isDateFormat(file.name)
             } ?: return false
             
-            // Collect all unique article codes
             val articleCodes = mutableSetOf<String>()
             
             for (dateFolder in dateFolders) {
-                // Get category folders
                 val categoryFolders = dateFolder.listFiles { file -> file.isDirectory } ?: continue
                 
                 for (categoryFolder in categoryFolders) {
-                    // Get article folders
                     val articleFolders = categoryFolder.listFiles { file -> file.isDirectory } ?: continue
                     
-                    // Add each article code to the set
                     for (articleFolder in articleFolders) {
                         articleCodes.add(articleFolder.name)
                     }
                 }
             }
             
-            // Create or update the summary file
             val summaryFileName = "${manufacturerFolder.name}main.txt"
             val summaryFile = File(manufacturerFolder, summaryFileName)
             
             FileOutputStream(summaryFile).use { output ->
-                // Write header with total count
                 val header = "общее количество ${articleCodes.size}\n\n"
                 output.write(header.toByteArray())
                 
-                // Write each article code on a new line
                 for (articleCode in articleCodes.sorted()) {
                     output.write("${articleCode}\n".toByteArray())
                 }
@@ -718,5 +769,29 @@ object FileUtils {
         val itemDir = createDirectoryStructure(context, manufacturerInfo, itemData) ?: return null
         val textFile = File(itemDir, "${itemData.fullArticleCode}.txt")
         return if (textFile.exists()) textFile else null
+    }
+    
+    /**
+     * Запустить диагностику файловой системы и вывести результаты в лог
+     */
+    fun runDiagnostics(context: Context) {
+        val diagnostic = FileSystemDiagnostic(context)
+        val result = diagnostic.runFullDiagnostic()
+        
+        Log.i(TAG, "=== ДИАГНОСТИКА ФАЙЛОВОЙ СИСТЕМЫ ===")
+        Log.i(TAG, "Устройство: ${result.deviceInfo}")
+        Log.i(TAG, "Разрешения: ${result.permissions}")
+        
+        result.availablePaths.forEach { pathInfo ->
+            Log.i(TAG, "Путь: ${pathInfo}")
+        }
+        
+        result.writeTests.forEach { testResult ->
+            Log.i(TAG, "Тест записи: ${testResult}")
+        }
+        
+        result.recommendations.forEach { recommendation ->
+            Log.i(TAG, "Рекомендация: $recommendation")
+        }
     }
 }

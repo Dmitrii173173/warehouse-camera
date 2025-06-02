@@ -25,6 +25,9 @@ class MainActivity : BaseActivity() {
         
         setContentView(R.layout.activity_main)
         
+        // Initialize FileUtils with diagnostic (IMPORTANT FIX FOR FILE SAVE ERRORS)
+        FileUtils.initialize(this)
+        
         // Request necessary permissions
         if (!PermissionUtils.hasCameraPermission(this) || !PermissionUtils.hasStoragePermission(this)) {
             PermissionUtils.requestAllPermissions(this)
@@ -131,6 +134,16 @@ class MainActivity : BaseActivity() {
             }
             R.id.menu_storage_info -> {
                 showStorageInfoDialog()
+                true
+            }
+            R.id.menu_diagnostic -> {
+                // Запуск диагностики файловой системы (для отладки)
+                FileUtils.runDiagnostics(this)
+                androidx.appcompat.app.AlertDialog.Builder(this)
+                    .setTitle("Диагностика завершена")
+                    .setMessage("Проверьте логи Android (тег: FileUtils, FileSystemDiagnostic) для подробной информации")
+                    .setPositiveButton("ОК", null)
+                    .show()
                 true
             }
             else -> super.onOptionsItemSelected(item)
